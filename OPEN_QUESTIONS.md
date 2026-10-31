@@ -166,3 +166,21 @@ reimbursed products (Gardasil 9, for instance, is missing there because the cant
 - **Product-dependent rules:** MenACWY at 12–23 months and PCV from 65 use the `tags` of the products. Not
   yet: HBV 11–15 adult or children's dose (Engerix-B 10/20 and HBVAXPRO 10/40 are one entry each; Tab. 2
   Fn. 11).
+
+## eVACDOC import (`flask convert-evacdoc`)
+
+Not from the schedule: how an eVACDOC file (HL7 CDA-CH-VACD, e.g. the export of the former meineimpfungen.ch)
+becomes import rows (`helvax/evacdoc.py`).
+
+- **Antigens from the SNOMED CT reason codes** of each vaccination ("Diphtheria vaccination (procedure)" etc.,
+  `SNOMED_ANTIGENS`), not from the product name or the ATC code. Only codes that name one antigen of the
+  schedule are mapped. "Meningococcus vaccination" (41088001) doesn't say the serogroup (MenC, MenACWY or
+  MenB), so such entries are left out and reported; so are BCG and anything else without an antigen.
+- **Product:** a catalogue product only if its name (or a name the document's name starts with, e.g.
+  "FSME-Immun CC" → FSME-Immun) matches *and* it covers exactly the antigens of the document; otherwise
+  "Anderer Impfstoff" with the document's name and antigens. Old products (Poloral, DiTePer Anatoxal,
+  Pluserix, ...) therefore come in as "other".
+- **Not taken over:** planned entries (the exporting system's own recommendations, LOINC 18776-5), negated or
+  not completed entries, past illnesses and the problem list (reported; immunities and risk factors are set
+  in the app). "Dokumentiert durch" (author) isn't the vaccinating person and isn't imported; `administered_by`
+  comes from `performer` only.
