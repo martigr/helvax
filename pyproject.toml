@@ -1,6 +1,6 @@
 [project]
 name = "helvax"
-version = "0.1.0"
+version = "0.2.0"
 description = "Digital vaccination records of a family, with the Swiss vaccination schedule"
 requires-python = ">=3.13"
 license = "MIT"
