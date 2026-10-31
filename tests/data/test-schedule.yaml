@@ -1,0 +1,193 @@
+# A small, made-up schedule for the engine tests. NOT medical rules: the real ones are in
+# helvax/schedules/. Each rule exercises one feature of the format.
+schedule:
+  id: test-1
+  title: Testplan
+  publisher: Tests
+  published: 2026-01-01
+  source_url: https://example.org/testplan
+  placeholder: true
+  overdue_grace: 1m
+
+antigens:
+  hib: {label: Hib-artig, short: H}
+  dt: {label: dT-artig, short: T}
+  menb: {label: MenB-artig, short: B}
+  mmr: {label: MMR-artig, short: M}
+  rota: {label: Rota-artig, short: R}
+  tbe: {label: FSME-artig, short: F}
+  flu: {label: Grippe-artig, short: G}
+  rsv: {label: RSV-artig, short: RSV}
+  pol: {label: Arzt-artig, short: P}
+  hpv: {label: HPV-artig, short: HPV}
+
+flags:
+  tick: {label: Zeckengebiet}
+  maternal: {label: Mutter geimpft}
+
+rules:
+  # Infant series with a catch-up series by start age, recommended only until 5 years
+  - antigen: hib
+    category: basic
+    ref: test hib
+    courses:
+      - ages: [0d, 5y]
+        series:
+          - start_age: [0d, 3m]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
+          - start_age: [3m, 5y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+
+  # Lifelong: childhood series, then boosters whose interval depends on the age at the last dose
+  - antigen: dt
+    category: basic
+    ref: test dt
+    booster_grace: 1y
+    courses:
+      - ages: [0d, null]
+        series:
+          - start_age: [0d, 1y]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
+          - start_age: [1y, null]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+    recurring:
+      - {age_at_last: [0d, 16y], next_at_age: 25y}
+      - {age_at_last: [16y, 25y], interval: 10y}
+      - {age_at_last: [25y, 65y], interval: 20y}
+      - {age_at_last: [65y, null], interval: 10y}
+
+  # Supplementary, two independent courses
+  - antigen: menb
+    category: supplementary
+    ref: test menb
+    courses:
+      - id: infant
+        ages: [0d, 5y]
+        series:
+          - start_age: [0d, 5y]
+            doses:
+              - {at: 3m, min_age: 8w}
+              - {at: 5m, min_interval: 2m}
+              - {window: [12m, 19m], min_interval: 6m}
+      - id: teen
+        ages: [11y, 20y]
+        series:
+          - start_age: [11y, 20y]
+            doses:
+              - {window: [11y, 16y]}
+              - {after: 1m, min_interval: 1m}
+
+  # Doses before 9 months don't count; born before 1964: immune
+  - antigen: mmr
+    category: basic
+    ref: test mmr
+    not_counted_before: 9m
+    exempt_if_born_before: 1964-01-01
+    courses:
+      - ages: [0d, null]
+        series:
+          - start_age: [0d, 13m]
+            doses:
+              - {at: 9m}
+              - {at: 12m, min_interval: 4w}
+          - start_age: [13m, null]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 4w}
+
+  # Hard age limits per dose: a missed dose ends the series
+  - antigen: rota
+    category: supplementary
+    ref: test rota
+    courses:
+      - ages: [0d, 24w]
+        series:
+          - start_age: [0d, 24w]
+            doses:
+              - {at: 2m, min_age: 6w, until: 16w, if_missed: skip}
+              - {at: 4m, min_interval: 4w, until: 24w, if_missed: skip}
+
+  # Only with a condition flag; boosters every 10 years
+  - antigen: tbe
+    category: risk_group
+    ref: test tbe
+    requires_flag: tick
+    courses:
+      - ages: [3y, null]
+        series:
+          - start_age: [3y, null]
+            doses:
+              - {}
+              - {after: 1m, min_interval: 14d}
+              - {after: 5m, min_interval: 5m}
+    recurring:
+      - {age_at_last: [0d, null], interval: 10y}
+
+  # Every season from 65
+  - antigen: flu
+    category: supplementary
+    ref: test flu
+    seasonal: {from_age: 65y, recommend: [10-15, 12-31], counts_from: 09-01}
+
+  # Single dose whose timing depends on the birth month
+  - antigen: rsv
+    category: basic
+    ref: test rsv
+    skip_if_flag: maternal
+    courses:
+      - ages: [0d, 12m]
+        birth_month:
+          - {birth_months: [10, 11, 12, 1, 2, 3], at: 0d, latest: 7d, missed_after: 03-31, missed_then: 10-01}
+          - {birth_months: [4, 5, 6, 7, 8, 9], on_date: 10-01, latest_date: 10-31}
+
+  # A missed window needs the doctor
+  - antigen: pol
+    category: basic
+    ref: test pol
+    review: true
+    courses:
+      - ages: [0d, null]
+        series:
+          - start_age: [0d, null]
+            doses:
+              - {at: 2m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y}
+
+  # Series by age at the first dose, one of them supplementary
+  - antigen: hpv
+    category: basic
+    ref: test hpv
+    courses:
+      - ages: [11y, 27y]
+        series:
+          - start_age: [11y, 15y]
+            doses:
+              - {window: [11y, 15y]}
+              - {after: 6m, min_interval: 5m}
+          - start_age: [15y, 20y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 1m}
+              - {after: 4m, min_interval: 4m}
+          - start_age: [20y, 27y]
+            category: supplementary
+            doses:
+              - {}
+              - {after: 2m, min_interval: 1m}
+              - {after: 4m, min_interval: 4m}

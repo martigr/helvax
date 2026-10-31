@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Profil bearbeiten' if profile else 'Neues Profil' }} – helvax{% endblock %}
+{% block content %}
+<div class="narrow" style="display:flex;flex-direction:column;gap:20px">
+  <div class="page-head">
+    <div>
+      <div class="kicker">{{ profile['display_name'] if profile else 'Familie' }}</div>
+      <h1>{{ 'Profil bearbeiten' if profile else 'Neues Profil' }}</h1>
+    </div>
+  </div>
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="display_name">Name</label>
+      <input type="text" id="display_name" name="display_name" value="{{ form['display_name'] or '' }}" maxlength="40" required autocomplete="off">
+      <span class="hint">So erscheint die Person in helvax, z. B. der Vorname.</span>
+    </div>
+    <div class="field">
+      <label for="birth_date">Geburtsdatum</label>
+      <input type="date" id="birth_date" name="birth_date" value="{{ form['birth_date'] or '' }}" required>
+    </div>
+
+    {% set optins, conditions = flag_groups %}
+    <fieldset class="field">
+      <legend class="field-label">Ergänzende Impfungen</legend>
+      <span class="hint">Diese Impfungen empfiehlt der Impfplan für den individuellen Schutz. helvax berechnet sie nur, wenn du sie hier wählst.</span>
+      {% for f in optins %}
+      <label class="check"><input type="checkbox" name="flags" value="{{ f.key }}"{{ ' checked' if f.key in flags }}>{{ f.label|replace(' (ergänzende Impfung)', '') }}</label>
+      {% endfor %}
+    </fieldset>
+    {% if conditions %}
+    <fieldset class="field">
+      <legend class="field-label">Angaben zur Person</legend>
+      {% for f in conditions %}
+      <label class="check"><input type="checkbox" name="flags" value="{{ f.key }}"{{ ' checked' if f.key in flags }}>{{ f.label }}</label>
+      {% endfor %}
+    </fieldset>
+    {% endif %}
+    <div class="toolbar">
+      <button type="submit" class="btn btn-primary">{{ 'Speichern' if profile else 'Profil anlegen' }}</button>
+      <a class="btn" href="{{ url_for('profiles.show', profile_id=profile['id']) if profile else url_for('dashboard.index') }}">Abbrechen</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

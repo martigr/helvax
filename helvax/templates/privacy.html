@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Datenschutz – helvax{% endblock %}
+{% block body %}
+{% if g.user %}
+{{ super() }}
+{% else %}
+{# Logged out: no user bar and no version in the footer #}
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="{{ url_for('auth.login') }}">
+      <span class="brand-mark">{% include '_logo.html' %}</span>
+      <span class="brand-name">helvax</span>
+    </a>
+    <a class="btn btn-small" href="{{ url_for('auth.login') }}" style="margin-left:auto">Anmelden</a>
+  </div>
+</header>
+<main class="page">{{ self.content() }}</main>
+<footer class="site-footer"><a href="{{ url_for('privacy') }}">Datenschutz</a></footer>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="narrow privacy" style="display:flex;flex-direction:column;gap:20px">
+  <div class="page-head">
+    <div>
+      <div class="kicker">helvax</div>
+      <h1>Datenschutz</h1>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>Verantwortlich</h2>
+    {% if controller or contact %}
+    <p>{% if controller %}{{ controller }}{% endif %}{% if controller and contact %}<br>{% endif %}
+      {% if contact_href %}<a href="{{ contact_href }}">{{ contact }}</a>{% elif contact %}{{ contact }}{% endif %}</p>
+    {% else %}
+    <p>Der Betreiber dieser Installation hat noch keine Kontaktangaben hinterlegt. Bitte wende dich an den Admin.</p>
+    {% endif %}
+    <p class="hint">An diese Stelle kannst du dich mit allen Fragen zu deinen Daten wenden.</p>
+  </section>
+
+  <section class="card">
+    <h2>Wozu</h2>
+    <p>Die App führt die Impfausweise einer Familie und vergleicht sie mit dem Schweizerischen Impfplan.
+      Die Daten werden nur dafür bearbeitet und für den sicheren Betrieb (Schutz vor Missbrauch,
+      Nachvollziehbarkeit von Änderungen). Impfdaten sind <strong>Gesundheitsdaten</strong> und damit besonders
+      schützenswert. Es gibt keine Werbung, kein Tracking, keine Verbindungen zu fremden Servern und keine
+      Weitergabe zu anderen Zwecken.</p>
+    <p>helvax ersetzt keine medizinische Beratung. Die angezeigten Empfehlungen sind eine Hilfe;
+      verbindlich ist, was du mit deiner Ärztin oder deinem Arzt besprichst.</p>
+  </section>
+
+  <section class="card">
+    <h2>Welche Daten</h2>
+    <ul>
+      <li><strong>Konto:</strong> Benutzername, Anzeigename, Passwort (nur als nicht umkehrbarer Hash),
+        Familie (vom Admin zugeordnet), Admin-Rolle.</li>
+      <li><strong>Profile:</strong> Name und Geburtsdatum jeder erfassten Person und die gewählten ergänzenden
+        Impfungen bzw. Angaben wie «wohnt in einem FSME-Risikogebiet».</li>
+      <li><strong>Impfungen:</strong> Datum, Impfstoff, Charge, wer geimpft hat, Notiz; durchgemachte Krankheiten
+        oder Serologien, falls erfasst.</li>
+      <li><strong>E-Mail (freiwillig):</strong> Adresse und Bestätigungsstatus.</li>
+      <li><strong>Audit-Log:</strong> Anmeldungen und Änderungen (z.&nbsp;B. «Impfung erfasst» bei welchem Profil),
+        mit Zeitpunkt und IP-Adresse, ohne Impfstoff oder Diagnose.</li>
+      <li><strong>Server-Protokoll:</strong> Anmeldungen und fehlgeschlagene Anmeldeversuche mit Benutzername und
+        IP-Adresse.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Wer sieht was</h2>
+    <ul>
+      <li>Die Profile und Impfungen einer Familie sehen <strong>nur die Konten dieser Familie</strong>. Jedes
+        Mitglied kann sie bearbeiten.</li>
+      <li>Admins legen Konten und Familien an und sehen die Benutzerliste mit E-Mail-Adressen und das Audit-Log.
+        Impfdaten sehen sie nur, wenn sie selbst Mitglied der Familie sind.</li>
+      <li>Mails enthalten nie Angaben zu Impfungen, nur einen Link in die App.</li>
+      <li>Die App läuft auf einem Server, den der Betreiber selbst betreibt. Mails werden über einen
+        Mail-Anbieter verschickt, der sie nur im Auftrag bearbeitet.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Wie lange</h2>
+    <ul>
+      <li>Profile und Impfungen: bis ein Mitglied der Familie sie löscht.</li>
+      <li>Konto: bis ein Admin es löscht. Die Profile der Familie bleiben dabei erhalten.</li>
+      <li>Audit-Log: {{ audit_days }} Tage, danach automatisch gelöscht.</li>
+      <li>Verschickte Mails: {{ keep_mail_days }} Tage.</li>
+      <li>Fehlgeschlagene Anmeldeversuche (Schutz vor Passwort-Raten): 15 Minuten.</li>
+      <li>Server-Protokoll und Sicherungen: je nach Einstellung des Betreibers.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Cookies</h2>
+    <p>Die App setzt ein einziges, technisch notwendiges Cookie: das Sitzungs-Cookie, das dich angemeldet hält
+      und Formulare schützt. Mit «Angemeldet bleiben» gilt es 30 Tage, sonst bis du den Browser schliesst.
+      Es gibt keine Analyse- oder Werbe-Cookies und keine Inhalte von fremden Servern.</p>
+    <p>Damit die App ohne Verbindung eine Meldung statt einer Fehlerseite zeigt, speichert dein Browser die Seite
+      «Keine Verbindung» samt Gestaltung. Sie enthält keine persönlichen Daten und keine Impfdaten.</p>
+  </section>
+
+  <section class="card">
+    <h2>Deine Rechte</h2>
+    <p>Du kannst Auskunft über deine Daten verlangen und sie berichtigen oder löschen lassen. Wende dich dafür an die
+      oben genannte Stelle. Profile und Impfungen deiner Familie kannst du selbst ändern und löschen,
+      Anzeigename und E-Mail-Adresse im Konto.</p>
+  </section>
+</div>
+{% endblock %}

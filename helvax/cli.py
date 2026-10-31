@@ -1,0 +1,90 @@
+"""Command line: flask --app helvax <command>."""
+import sqlite3
+import time
+
+import click
+from flask import current_app
+from flask.cli import with_appcontext
+
+from . import audit, demo, mail, notifications
+from .db import get_db
+from .users import UserError, create_user, get_user_by_username
+
+
+@click.command('create-user')
+@with_appcontext
+@click.argument('username')
+@click.option('--name', 'display_name', help='Anzeigename (Standard: Benutzername)')
+@click.option('--admin', is_flag=True, help='Benutzer erhält Admin-Rechte')
+@click.password_option()
+def create_user_command(username, display_name, admin, password):
+    """Legt einen Benutzer an."""
+    try:
+        create_user(username, password, display_name, admin)
+    except UserError as e:
+        raise click.ClickException(str(e)) from None
+    with get_db() as con:
+        audit.record(con, 'user_created', username.strip().lower() + (' (Admin)' if admin else ''),
+                     username='Kommandozeile')
+    click.echo(f'Benutzer {username} angelegt.')
+
+
+@click.command('make-admin')
+@with_appcontext
+@click.argument('username')
+def make_admin_command(username):
+    """Gibt einem bestehenden Benutzer Admin-Rechte."""
+    user = get_user_by_username(username)
+    if user is None:
+        raise click.ClickException(f'Benutzer {username} nicht gefunden.')
+    with get_db() as con:
+        con.execute('UPDATE users SET is_admin = 1 WHERE id = ?', (user['id'],))
+        audit.record(con, 'user_admin', user['username'], username='Kommandozeile')
+    click.echo(f'{username} ist jetzt Admin.')
+
+
+@click.command('seed-demo')
+@with_appcontext
+def seed_demo_command():
+    """Fiktive Demo-Familie für die lokale Entwicklung (nie produktiv verwenden)."""
+    demo.seed()
+    click.echo('Demo-Benutzer: ' + ', '.join(f'{u} / {p}' for u, p, _, _ in demo.USERS))
+
+
+@click.command('send-notifications')
+@click.option('--loop', 'interval', type=int, default=0, metavar='SECONDS',
+              help='Immer wieder ausführen, alle SECONDS Sekunden (für einen eigenen Container).')
+@with_appcontext
+def send_notifications_command(interval):
+    """Erinnerungen einplanen und alle wartenden Mails verschicken."""
+    app = current_app._get_current_object()
+    if not mail.is_configured():
+        app.logger.warning('Mail (SMTP_HOST, MAIL_FROM) is not configured; no notifications are sent.')
+    while True:
+        with app.app_context():  # fresh DB connection per run
+            sent, failed = notifications.run_once()
+        if sent or failed:
+            app.logger.info('Notifications: %d sent, %d failed', sent, failed)
+        if not interval:
+            break
+        time.sleep(interval)
+
+
+@click.command('backup')
+@click.argument('target', type=click.Path(dir_okay=False))
+@with_appcontext
+def backup_command(target):
+    """Sichert die Datenbank in die Datei TARGET (geht auch, während die App läuft)."""
+    # SQLite's online backup copies a consistent state, including what is still in the WAL file
+    dest = sqlite3.connect(target)
+    try:
+        get_db().backup(dest)
+    finally:
+        dest.close()
+    click.echo(f'Datenbank gesichert nach {target}.')
+
+
+def init_app(app):
+    for command in (create_user_command, make_admin_command, seed_demo_command,
+                    send_notifications_command, backup_command):
+        app.cli.add_command(command)

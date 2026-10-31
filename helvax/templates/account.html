@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Konto – helvax{% endblock %}
+{% block content %}
+<div class="narrow" style="display:flex;flex-direction:column;gap:20px">
+  <div class="page-head">
+    <div>
+      <div class="kicker">Angemeldet als {{ g.user['username'] }}</div>
+      <h1>Konto</h1>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>Familie</h2>
+    {% if family %}
+    <p style="margin:0">Du gehörst zur Familie <strong>{{ family }}</strong>{% if members %}, zusammen mit {{ members|join(', ') }}{% endif %}.
+      Alle Konten der Familie sehen und bearbeiten dieselben Profile.</p>
+    {% else %}
+    <p style="margin:0">Du gehörst noch zu keiner Familie. Ein Admin muss dich einer Familie zuordnen, bevor du Profile anlegen kannst.</p>
+    {% endif %}
+  </section>
+
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="name">
+    <h2>Anzeigename</h2>
+    <div class="field">
+      <label for="display_name">So sehen dich die anderen Mitglieder deiner Familie</label>
+      <input type="text" id="display_name" name="display_name" value="{{ g.user['display_name'] }}" maxlength="{{ max_name }}" required>
+    </div>
+    <div><button type="submit" class="btn btn-dark">Speichern</button></div>
+  </form>
+
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="email">
+    <h2>E-Mail</h2>
+    {% if not mail_enabled %}<p class="hint" style="margin:0">Der Mailversand ist noch nicht eingerichtet. Die Adresse wird gespeichert und gilt, sobald er läuft.</p>{% endif %}
+    <div class="field">
+      <label for="email">E-Mail-Adresse</label>
+      <input type="email" id="email" name="email" value="{{ g.user['email'] or '' }}" autocomplete="email" maxlength="254">
+      <span class="hint">Für Erinnerungen und «Passwort vergessen». Leer lassen, wenn du keine Mails willst.</span>
+      {% if g.user['email'] and not g.user['email_verified'] %}
+      <span class="hint"><strong>Noch nicht bestätigt.</strong> Du bekommst erst Mails, wenn du den Link in der Bestätigungsmail geöffnet hast.
+        {% if mail_enabled %}<button type="submit" form="verify-form" class="linklike">Bestätigungsmail nochmals senden</button>{% endif %}</span>
+      {% endif %}
+    </div>
+    <div><button type="submit" class="btn btn-dark">Speichern</button></div>
+  </form>
+  <form id="verify-form" method="post" hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="verify_email">
+  </form>
+
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="password">
+    <h2>Passwort ändern</h2>
+    <div class="field">
+      <label for="old_password">Aktuelles Passwort</label>
+      <input type="password" id="old_password" name="old_password" autocomplete="current-password" required>
+    </div>
+    <div class="field">
+      <label for="new_password">Neues Passwort</label>
+      <input type="password" id="new_password" name="new_password" autocomplete="new-password" minlength="{{ min_pw }}" required>
+      <span class="hint">Mindestens {{ min_pw }} Zeichen.</span>
+    </div>
+    <div class="field">
+      <label for="new_password2">Neues Passwort wiederholen</label>
+      <input type="password" id="new_password2" name="new_password2" autocomplete="new-password" required aria-describedby="pw-mismatch">
+      <span class="field-error" id="pw-mismatch" aria-live="polite"></span>
+    </div>
+    <div><button type="submit" class="btn btn-dark">Passwort ändern</button></div>
+  </form>
+
+  <form class="profile-logout" method="post" action="{{ url_for('auth.logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn" style="width:100%">Abmelden</button>
+  </form>
+</div>
+<script src="{{ url_for('static', filename='account.js') }}" defer></script>
+{% endblock %}

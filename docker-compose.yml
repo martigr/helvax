@@ -1,0 +1,38 @@
+# Web app + notifier (sends reminders and other mails every minute). Settings come from .env,
+# see .env.example. Start with: docker compose up -d --build
+# The app speaks plain HTTP: put an HTTPS reverse proxy in front of it (see README, "HTTPS").
+services:
+  web:
+    build: .
+    image: helvax
+    env_file: .env
+    ports:
+      # Only reachable from this host, i.e. the reverse proxy; never expose port 5050 directly
+      - "127.0.0.1:5050:5000"
+    volumes:
+      - helvax-data:/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      options: {max-size: 10m, max-file: "3"}
+
+  notifier:
+    build: .
+    image: helvax
+    command: ["flask", "--app", "helvax", "send-notifications", "--loop", "60"]
+    env_file: .env
+    volumes:
+      - helvax-data:/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      options: {max-size: 10m, max-file: "3"}
+    depends_on:
+      - web
+    healthcheck:
+      disable: true  # no web server in this container
+
+volumes:
+  helvax-data:

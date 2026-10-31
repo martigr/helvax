@@ -1,0 +1,18 @@
+{# Status badge and the text about the next dose of an engine.AntigenStatus #}
+{% macro badge(status) -%}
+<span class="status-badge status-{{ status }}">{{ STATUS_LABELS[status] }}</span>
+{%- endmacro %}
+
+{% macro next_text(s) -%}
+{%- if s.next -%}
+  {%- if s.status in ('overdue', 'due') and s.next.asap -%}so bald wie möglich
+  {%- elif s.status in ('overdue', 'due') -%}empfohlen seit {{ s.next.recommended|date }}
+  {%- else -%}empfohlen am {{ s.next.recommended|date }}
+  {%- endif -%}
+  {%- if s.next.latest and s.status != 'overdue' and s.next.latest != s.next.recommended %}, spätestens {{ s.next.latest|date }}{% endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro dose_label(s) -%}
+{%- if s.next -%}{{ s.next.label or (s.next.number ~ '. Dosis') }}{%- endif -%}
+{%- endmacro %}

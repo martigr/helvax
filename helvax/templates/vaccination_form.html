@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Impfung bearbeiten' if entry else 'Impfung erfassen' }} – helvax{% endblock %}
+{% block content %}
+<div class="narrow" style="display:flex;flex-direction:column;gap:20px">
+  <div class="page-head">
+    <div>
+      <div class="kicker">{{ profile['display_name'] }}</div>
+      <h1>{{ 'Impfung bearbeiten' if entry else 'Impfung erfassen' }}</h1>
+    </div>
+  </div>
+  <form class="card" method="post" id="vaccination-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="date">Datum der Impfung</label>
+      <input type="date" id="date" name="date" value="{{ values['date'] or '' }}" min="{{ profile['birth_date'] }}" max="{{ today.isoformat() }}" required>
+    </div>
+    <div class="field">
+      <label for="product">Impfstoff</label>
+      <select id="product" name="product" required>
+        <option value="">– bitte wählen –</option>
+        {% for group, products in catalogue.groups() %}
+        <optgroup label="{{ group }}">
+          {% for p in products %}
+          <option value="{{ p.key }}" data-antigens="{{ p.antigens|join(' ') }}"{{ ' selected' if product == p.key }}>{{ p.name }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endfor %}
+        <option value="{{ other }}"{{ ' selected' if product == other }}>Anderer Impfstoff …</option>
+      </select>
+      <span class="hint">Steht im Impfausweis meist auf der Klebeetikette. Nicht in der Liste? «Anderer Impfstoff» wählen.</span>
+    </div>
+    <div class="field" id="other-product">
+      <label for="product_name">Name des Impfstoffs (bei «Anderer Impfstoff»)</label>
+      <input type="text" id="product_name" name="product_name" value="{{ values['product_name'] if product == other else '' }}" maxlength="{{ limits.product }}">
+    </div>
+    <fieldset class="field" id="antigen-boxes">
+      <legend class="field-label">Schützt gegen</legend>
+      <span class="hint">Bei einem Impfstoff aus der Liste gelten automatisch dessen Bestandteile; bei «Anderer Impfstoff» hier auswählen.</span>
+      <div class="antigen-grid">
+        {% for key, a in antigens.items() %}
+        <label class="check"><input type="checkbox" name="antigens" value="{{ key }}"{{ ' checked' if key in selected }}>{{ a.label }}</label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <div class="field">
+      <label for="lot">Charge (Lot-Nummer, optional)</label>
+      <input type="text" id="lot" name="lot" value="{{ values['lot'] or '' }}" maxlength="{{ limits.lot }}" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="administered_by">Geimpft von (optional)</label>
+      <input type="text" id="administered_by" name="administered_by" value="{{ values['administered_by'] or '' }}" maxlength="{{ limits.by }}" placeholder="Praxis, Apotheke …">
+    </div>
+    <div class="field">
+      <label for="note">Notiz (optional)</label>
+      <input type="text" id="note" name="note" value="{{ values['note'] or '' }}" maxlength="{{ limits.note }}">
+    </div>
+    {% if entry and overrides %}
+    <fieldset class="field">
+      <legend class="field-label">Dosis-Nummer (optional)</legend>
+      <span class="hint">helvax zählt die Dosen selbst. Steht im Impfausweis eine andere Nummer, kannst du sie hier eintragen; sie wird nur angezeigt.</span>
+      <div class="antigen-grid">
+        {% for key, value in overrides.items() %}
+        <div class="field dose-field">
+          <label for="dose_{{ key }}">{{ antigens[key].label if key in antigens else key }}</label>
+          <input type="number" id="dose_{{ key }}" name="dose_{{ key }}" min="1" max="20" value="{{ value or '' }}" placeholder="{{ computed[key] or '' }}">
+        </div>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endif %}
+    <div class="toolbar">
+      <button type="submit" class="btn btn-primary">Speichern</button>
+      {% if not entry %}<button type="submit" class="btn" name="another" value="1">Speichern und nächste erfassen</button>{% endif %}
+      <a class="btn" href="{{ url_for('profiles.show', profile_id=profile['id']) }}#impfausweis">Abbrechen</a>
+    </div>
+  </form>
+</div>
+<script src="{{ url_for('static', filename='vaccination.js') }}" defer></script>
+{% endblock %}

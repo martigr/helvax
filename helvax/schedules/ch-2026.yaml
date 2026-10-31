@@ -1,0 +1,588 @@
+# Swiss vaccination schedule 2026 (Schweizerischer Impfplan 2026, BAG / EKIF), as rules for helvax.
+#
+# Source: docs/sources/schweizerischer-impfplan-2026-de.pdf (published 2026-02-23, corrected 2026-04-16).
+# `ref` names the page (S.), table (Tab.) and footnote (Fn.) each rule is taken from.
+# `review: true` marks rules whose translation into this format involved a judgement call; each one is
+# listed in OPEN_QUESTIONS.md. This file is a reading of the schedule, not medical advice: check it
+# against the PDF before relying on it.
+#
+# Format: see docs/DEVELOPMENT.md, "Schedule file". Ages are calendar durations from the birth date;
+# ranges are [from, until) ("4–7 Jahre" = [4y, 8y]). Catch-up series (`catch_up: true`) are chosen by
+# the age at the first dose, as in Tab. 2 ("Nachholimpfschemata für ungeimpfte Kinder und Erwachsene");
+# Tab. 2 gives the third dose as "8 months after the first", written here as the interval after the second.
+# Childhood boosters have `skip_from: 16y`: adults don't catch up missed boosters (Tab. 2 Fn. 5), the next
+# dose is the adult booster.
+
+schedule:
+  id: ch-2026
+  title: Schweizerischer Impfplan 2026
+  publisher: Bundesamt für Gesundheit (BAG) / Eidgenössische Kommission für Impffragen (EKIF)
+  published: 2026-02-23
+  revised: 2026-04-16
+  source_url: https://www.bag.admin.ch/de/schweizerischer-impfplan
+  # App convention, not from the schedule: a dose with a recommended date (not a window) counts as
+  # overdue this long after it
+  overdue_grace: 1m
+
+antigens:
+  dip: {label: Diphtherie, short: D}
+  tet: {label: Tetanus, short: T}
+  pert: {label: Pertussis (Keuchhusten), short: P}
+  polio: {label: Kinderlähmung (Polio), short: IPV}
+  hib: {label: Haemophilus influenzae Typ b, short: Hib}
+  hbv: {label: Hepatitis B, short: HBV}
+  pcv: {label: Pneumokokken, short: PCV}
+  rota: {label: Rotaviren, short: RV}
+  menb: {label: Meningokokken B, short: MenB}
+  menacwy: {label: Meningokokken ACWY, short: MenACWY}
+  measles: {label: Masern, short: M}
+  mumps: {label: Mumps, short: M}
+  rubella: {label: Röteln, short: R}
+  varicella: {label: Windpocken (Varizellen), short: V}
+  hpv: {label: Humane Papillomaviren (HPV), short: HPV}
+  zoster: {label: Gürtelrose (Herpes zoster), short: HZ}
+  influenza: {label: Grippe (Influenza), short: Grippe}
+  covid19: {label: Covid-19, short: Covid}
+  rsv: {label: RSV (Antikörper für Säuglinge), short: RSV}
+  tbe: {label: Zeckenenzephalitis (FSME), short: FSME}
+
+flags:
+  rsv_maternal:
+    label: Mutter in der Schwangerschaft gegen RSV geimpft (mindestens 14 Tage vor der Geburt)
+  fsme_exposure:
+    label: Wohnt in einem FSME-Risikogebiet oder hält sich dort auf (ganze Schweiz ausser Tessin)
+
+rules:
+  # --- Diphtheria and tetanus: infant 2+1, boosters at 4–7 and 11–15, then dT at 25, 45, 65, every 10 years
+  - antigen: dip
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 13; S. 11 b); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 15 1.5 a); S. 16; S. 18 Tab. 2"
+    review: true
+    booster_grace: 1y
+    note: Bei unvollständiger Grundimmunisierung legt die Ärztin oder der Arzt das Nachholschema fest (Tab. 3 und 4).
+    courses: &dt_courses
+      - id: grundimmunisierung
+        ages: [0d, null]
+        series:
+          - start_age: [0d, 3m]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [3m, 6m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [6m, 12m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 4w}
+              - {after: 7m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [12m, 4y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [4y, 8y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [8y, 11y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [11y, null]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+    recurring: &dt_recurring
+      # S. 14 1.4 a): the age at a booster decides the interval to the next one
+      - {age_at_last: [0d, 16y], next_at_age: 25y}
+      - {age_at_last: [16y, 25y], interval: 10y}
+      - {age_at_last: [25y, 65y], interval: 20y}
+      - {age_at_last: [65y, null], interval: 10y}
+
+  - antigen: tet
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 13; S. 11 b); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 15 1.5 a); S. 16; S. 18 Tab. 2"
+    review: true
+    booster_grace: 1y
+    note: Bei unvollständiger Grundimmunisierung legt die Ärztin oder der Arzt das Nachholschema fest (Tab. 3 und 4).
+    courses: *dt_courses
+    recurring: *dt_recurring
+
+  # --- Pertussis: like diphtheria/tetanus in childhood, from 8 years fewer doses with pertussis (Tab. 2),
+  # then one dose at 25; from 26 no routine boosters
+  - antigen: pert
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 14; S. 11 c); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 18 Tab. 2 Fn. 5, 6"
+    review: true
+    note: Zusätzliche Dosis bei regelmässigem Kontakt mit Säuglingen unter 6 Monaten und in jeder Schwangerschaft (Kapitel 3.1, nicht berechnet).
+    courses:
+      - id: kindheit
+        ages: [0d, 25y]
+        series:
+          - start_age: [0d, 3m]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [3m, 6m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [6m, 12m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 4w}
+              - {after: 7m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [12m, 4y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [4y, 8y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          # Tab. 2: 8–10 years 0 (dTpa), 2 (dTpa), 8 (dT without pertussis), 11–15 (dTpa)
+          - start_age: [8y, 11y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          # Tab. 2: 11–24 years only the first dose with pertussis (dTpa), then 25 years (dTpa)
+          - start_age: [11y, 25y]
+            catch_up: true
+            doses:
+              - {}
+      - id: mit-25
+        ages: [25y, 26y]
+        series:
+          - start_age: [25y, 26y]
+            doses:
+              - {window: [25y, 26y], if_missed: skip, label: Auffrischimpfung mit 25 Jahren}
+
+  # --- Polio: infant 2+1, booster at 4–7, no further routine boosters
+  - antigen: polio
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 10; S. 11 d); S. 13 1.2 a); S. 18 Tab. 2 Fn. 7"
+    review: true
+    note: Reisende in Länder mit Polio-Risiko brauchen allenfalls weitere Auffrischimpfungen (nicht berechnet).
+    courses:
+      - id: grundimmunisierung
+        ages: [0d, null]
+        series:
+          - start_age: [0d, 3m]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+          - start_age: [3m, 6m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+          - start_age: [6m, 12m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 4w}
+              - {after: 7m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+          - start_age: [12m, 4y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+          - start_age: [4y, 11y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
+          - start_age: [11y, null]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+
+  # --- Hib: infant 2+1, catch-up until the 5th birthday, number of doses by age at the start
+  - antigen: hib
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 6; S. 11 e); S. 17; S. 18 Tab. 2 Fn. 8"
+    courses:
+      - id: kindheit
+        ages: [0d, 5y]
+        series:
+          - start_age: [0d, 3m]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
+          - start_age: [3m, 6m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {at: 12m, min_interval: 6m}
+          - start_age: [6m, 12m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 4w}
+              - {after: 7m, min_interval: 6m}
+          - start_age: [12m, 15m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+          - start_age: [15m, 5y]
+            catch_up: true
+            doses:
+              - {}
+
+  # --- Hepatitis B: infant 2+1 (hexavalent); otherwise preferably at 11–15 years (2 doses)
+  - antigen: hbv
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 2, 11, 15; S. 11 f); S. 13 1.3 b); S. 16; S. 18 Tab. 2 Fn. 9–12"
+    review: true
+    note: Ab 16 Jahren nur bei erhöhtem Expositionsrisiko (Kapitel 3.1 c, nicht berechnet). Neugeborene von HBsAg-positiven Müttern haben ein eigenes Schema.
+    courses:
+      - id: kindheit
+        ages: [0d, 16y]
+        series:
+          - start_age: [0d, 3m]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
+          - start_age: [3m, 6m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {after: 6m, min_interval: 6m}
+          - start_age: [6m, 12m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 4w}
+              - {after: 7m, min_interval: 6m}
+          # No catch-up row in Tab. 2 for 1–10 years: "soll die HBV-Impfung möglichst im Alter 11–15 Jahre erfolgen"
+          - start_age: [11y, 16y]
+            doses:
+              - {window: [11y, 16y]}
+              - {after: 4m, min_interval: 4m}
+
+  # --- Pneumococci: infant 2+1 and catch-up until the 5th birthday (basic); one dose from 65 (supplementary)
+  - antigen: pcv
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 3, 6, 16; S. 11 g); S. 15 1.5 d); S. 16; S. 17; S. 18 Tab. 2 Fn. 13"
+    review: true
+    note: Ab 65 hängt die Empfehlung vom früher verwendeten Impfstoff ab (PCV13, PCV15, PPV23); bitte mit der Ärztin oder dem Arzt klären.
+    courses:
+      - id: kindheit
+        ages: [0d, 5y]
+        series:
+          - start_age: [0d, 3m]
+            doses:
+              - {at: 2m, min_age: 6w}
+              - {at: 4m, min_interval: 4w}
+              - {at: 12m, overdue_after: 13m}
+          - start_age: [3m, 6m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+              - {at: 12m, min_interval: 6m}
+          - start_age: [6m, 12m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 4w}
+              - {after: 7m, min_interval: 6m}
+          - start_age: [12m, 24m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 4w}
+          - start_age: [24m, 5y]
+            catch_up: true
+            doses:
+              - {}
+      - id: ab-65
+        ages: [65y, null]
+        category: supplementary
+        series:
+          - start_age: [65y, null]
+            doses:
+              - {label: Einmalige Dosis ab 65 Jahren}
+
+  # --- Rotavirus: 2 oral doses, strict age limits
+  - antigen: rota
+    category: supplementary
+    ref: "S. 6 Tab. 1 Fn. 4; S. 12 h)"
+    courses:
+      - id: saeugling
+        ages: [0d, 24w]
+        series:
+          - start_age: [0d, 24w]
+            doses:
+              - {at: 2m, min_age: 6w, until: 16w, if_missed: skip}
+              - {at: 4m, min_interval: 4w, until: 24w, if_missed: skip}
+
+  # --- Meningococci B: infants/toddlers (catch-up until 5) and adolescents (catch-up until 20), independent
+  - antigen: menb
+    category: supplementary
+    ref: "S. 6 Tab. 1 Fn. 7; S. 12 i); S. 14 1.3 d); S. 18 Tab. 2 Fn. 18; S. 19"
+    courses:
+      - id: kleinkind
+        ages: [0d, 5y]
+        series:
+          - start_age: [0d, 12m]
+            doses:
+              - {at: 3m, min_age: 8w}
+              - {at: 5m, min_interval: 2m}
+              - {window: [12m, 19m], min_age: 12m, min_interval: 6m}
+          - start_age: [12m, 24m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 2m}
+              - {after: 12m, min_interval: 12m}
+          - start_age: [24m, 5y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 1m}
+      - id: jugendliche
+        ages: [11y, 20y]
+        series:
+          - start_age: [11y, 16y]
+            doses:
+              - {window: [11y, 16y]}
+              - {after: 1m, min_interval: 1m}
+          - start_age: [16y, 20y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_interval: 1m}
+
+  # --- Meningococci ACWY: toddlers 12–18 months (catch-up until 5) and adolescents 11–15 (catch-up until 20)
+  - antigen: menacwy
+    category: supplementary
+    ref: "S. 6 Tab. 1 Fn. 7; S. 12 j); S. 14 1.3 d); S. 18 Tab. 2 Fn. 19; S. 19"
+    review: true
+    note: Im Alter von 12–23 Monaten braucht es je nach Impfstoff 1 oder 2 Dosen (Abstand mindestens 2 Monate).
+    courses:
+      - id: kleinkind
+        ages: [12m, 5y]
+        series:
+          - start_age: [12m, 19m]
+            doses:
+              - {window: [12m, 19m]}
+          - start_age: [19m, 5y]
+            catch_up: true
+            doses:
+              - {}
+      - id: jugendliche
+        ages: [11y, 20y]
+        series:
+          - start_age: [11y, 16y]
+            doses:
+              - {window: [11y, 16y]}
+          - start_age: [16y, 20y]
+            catch_up: true
+            doses:
+              - {}
+
+  # --- Measles, mumps, rubella: 9 and 12 months; catch-up for everyone born from 1964; doses before 9 months
+  # don't count
+  - antigen: measles
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 5, 8; S. 13 k); S. 16–17; S. 18 Tab. 2 Fn. 14, 15"
+    not_counted_before: 9m
+    exempt_if_born_before: 1964-01-01
+    courses: &mmr_courses
+      - id: grundimmunisierung
+        ages: [0d, null]
+        series:
+          - start_age: [0d, 12m]
+            doses:
+              - {at: 9m}
+              - {at: 12m, min_age: 12m, min_interval: 4w}
+          - start_age: [12m, null]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_age: 12m, min_interval: 4w}
+
+  - antigen: mumps
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 5, 8; S. 13 k); S. 16–17; S. 18 Tab. 2 Fn. 14, 15"
+    not_counted_before: 9m
+    exempt_if_born_before: 1964-01-01
+    courses: *mmr_courses
+
+  - antigen: rubella
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 5, 8; S. 13 k); S. 16–17; S. 18 Tab. 2 Fn. 14, 15"
+    not_counted_before: 9m
+    exempt_if_born_before: 1964-01-01
+    courses: *mmr_courses
+
+  # --- Varicella: 9 and 12 months (MMRV); catch-up until 39 for people who haven't had chickenpox
+  - antigen: varicella
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 9; S. 13 l); S. 17; S. 18 Tab. 2 Fn. 16"
+    review: true
+    note: Wer die Windpocken durchgemacht hat, braucht keine Impfung (im Profil als Immunität erfassen).
+    courses:
+      - id: grundimmunisierung
+        ages: [0d, 40y]
+        series:
+          - start_age: [0d, 12m]
+            doses:
+              - {at: 9m}
+              - {at: 12m, min_age: 12m, min_interval: 4w}
+          - start_age: [12m, 40y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 1m, min_age: 12m, min_interval: 4w}
+
+  # --- HPV: 11–14 two doses, catch-up 15–19 three doses (basic), 20–26 three doses (supplementary)
+  - antigen: hpv
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 12; S. 13–14 1.3 c); S. 14–15 1.4 b); S. 17; S. 18 Tab. 2 Fn. 17"
+    review: true
+    courses:
+      - id: hpv
+        ages: [11y, 27y]
+        series:
+          - start_age: [11y, 15y]
+            doses:
+              - {window: [11y, 15y]}
+              - {after: 6m}
+          - start_age: [15y, 20y]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 1m}
+              - {after: 4m, min_interval: 4m}
+          - start_age: [20y, 27y]
+            category: supplementary
+            doses:
+              - {}
+              - {after: 2m, min_interval: 1m}
+              - {after: 4m, min_interval: 4m}
+
+  # --- Herpes zoster: 2 doses of the adjuvanted subunit vaccine from 65 (immunocompetent)
+  - antigen: zoster
+    category: supplementary
+    ref: "S. 6 Tab. 1 Fn. 17; S. 15 1.5 b)"
+    review: true
+    note: Für immunkompetente Personen. Bei Immunschwäche gelten andere Empfehlungen (Kapitel 3).
+    courses:
+      - id: ab-65
+        ages: [65y, null]
+        series:
+          - start_age: [65y, null]
+            doses:
+              - {}
+              - {after: 2m, min_interval: 2m}
+
+  # --- Influenza: every season from 65
+  - antigen: influenza
+    category: supplementary
+    ref: "S. 6 Tab. 1 Fn. 18; S. 15 1.5 c)"
+    review: true
+    note: Ab 75 Jahren (und ab 65 mit Risikofaktor) ist der Hochdosis-Impfstoff vorzuziehen.
+    seasonal: {from_age: 65y, recommend: [10-15, 12-31], counts_from: 09-01}
+
+  # --- Covid-19: every autumn/winter from 65, at least 6 months after the last dose
+  - antigen: covid19
+    category: supplementary
+    ref: "S. 6 Tab. 1; S. 16 1.5 e)"
+    review: true
+    note: Frühestens 6 Monate nach der letzten Impfung oder einer bestätigten Infektion.
+    seasonal: {from_age: 65y, recommend: [10-15, 12-31], counts_from: 09-01, min_interval: 6m}
+
+  # --- RSV: one dose of a long-acting monoclonal antibody in the first year of life, by birth month
+  - antigen: rsv
+    category: basic
+    ref: "S. 6 Tab. 1 Fn. 1; S. 9–10 1.1 a), Abbildung 1"
+    review: true
+    skip_if_flag: rsv_maternal
+    note: Trotz Impfung der Mutter empfohlen bei Frühgeburt vor 37+0 SSW und in besonderen Situationen (S. 10).
+    courses:
+      - id: erstes-lebensjahr
+        ages: [0d, 12m]
+        birth_month:
+          - {birth_months: [10, 11, 12, 1, 2, 3], at: 0d, latest: 7d, missed_after: 03-31, missed_then: 10-01}
+          - {birth_months: [4, 5, 6, 7, 8, 9], on_date: 10-01, latest_date: 10-31}
+
+  # --- Tick-borne encephalitis: risk group (living in or visiting a risk area), from 3 years; booster every
+  # 10 years
+  - antigen: tbe
+    category: risk_group
+    ref: "S. 22 3.1 a)"
+    review: true
+    requires_flag: fsme_exposure
+    booster_grace: 1y
+    note: Für 1- bis 2-Jährige mit hohem Zeckenrisiko individuell. Abstand zur 3. Dosis je nach Impfstoff.
+    courses:
+      - id: grundimmunisierung
+        ages: [3y, null]
+        series:
+          - start_age: [3y, null]
+            doses:
+              - {}
+              - {after: 1m, min_interval: 14d}
+              - {after: 5m, min_interval: 5m}
+    recurring:
+      - {age_at_last: [0d, null], interval: 10y}

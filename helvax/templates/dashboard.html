@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% from '_status.html' import badge, next_text, dose_label %}
+{% block title %}Übersicht – helvax{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="kicker">{{ g.user['display_name'] }}</div>
+    <h1>Übersicht</h1>
+  </div>
+  {% if has_family %}<a class="btn btn-primary" href="{{ url_for('profiles.new') }}">Profil hinzufügen</a>{% endif %}
+</div>
+
+{% if not has_family %}
+<section class="card">
+  <h2>Noch keine Familie</h2>
+  <p style="margin:0">Dein Konto gehört noch zu keiner Familie. Ein Admin muss dich einer Familie zuordnen; danach siehst du hier die Profile und kannst neue anlegen.</p>
+</section>
+{% elif not cards %}
+<section class="card">
+  <h2>Willkommen bei helvax</h2>
+  <p style="margin:0">Lege für jede Person der Familie ein Profil an und erfasse die Impfungen aus dem Impfausweis. helvax zeigt dann, welche Impfungen nach dem {{ schedule.title }} fällig sind.</p>
+  <div><a class="btn btn-primary" href="{{ url_for('profiles.new') }}">Erstes Profil anlegen</a></div>
+</section>
+{% else %}
+<div class="split">
+  <section class="card split-main" aria-labelledby="next-h">
+    <h2 id="next-h">Als Nächstes</h2>
+    {% if upcoming %}
+    <ul class="due-list">
+      {% for u in upcoming %}
+      <li>
+        <a href="{{ url_for('profiles.show', profile_id=u.profile['id']) }}#status">
+          <span class="due-who">{{ u.profile['display_name'] }}</span>
+          <span class="due-what">{{ u.labels|join(', ') }} <span class="hint">· {{ dose_label(u.first) }}</span></span>
+          <span class="due-when hint">{{ next_text(u.first) }}{% if u.first.needs_doctor %} · Nachholschema mit Ärztin/Arzt{% endif %}</span>
+        </a>
+        {{ badge(u.status) }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="hint" style="margin:0">Zurzeit ist keine Impfung fällig und in den nächsten Wochen keine vorgesehen.</p>
+    {% endif %}
+  </section>
+
+  <div class="split-side">
+    <section class="card" aria-labelledby="profiles-h">
+      <h2 id="profiles-h">Profile</h2>
+      <ul class="profile-list">
+        {% for c in cards %}
+        <li>
+          <a href="{{ url_for('profiles.show', profile_id=c.profile['id']) }}">
+            <span class="avatar">{{ c.profile['display_name'][:1]|upper }}</span>
+            <span><strong>{{ c.profile['display_name'] }}</strong><small>{{ c.age }} · {{ c.entries }} {{ 'Eintrag' if c.entries == 1 else 'Einträge' }}</small></span>
+          </a>
+          {{ badge(c.worst) }}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    <p class="hint">Grundlage: <a href="{{ url_for('dashboard.schedule_page') }}">{{ schedule.title }}</a> ({{ schedule.version }})</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

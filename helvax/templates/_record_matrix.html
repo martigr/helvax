@@ -1,0 +1,48 @@
+{# The vaccination record as a matrix like the paper booklet: a row per entry, a column per antigen,
+   the dose number where the vaccine covers the antigen. `edit`: link the dates to the edit form. #}
+{% macro record_matrix(matrix, edit=false) -%}
+<div class="table-wrap">
+  <table class="record matrix">
+    <thead>
+      <tr>
+        <th class="matrix-date">Datum</th>
+        <th class="matrix-product">Impfstoff<br><span class="hint">Charge</span></th>
+        {% for c in matrix.columns %}<th class="matrix-antigen" scope="col"><span title="{{ c.label }}">{{ c.label }}</span></th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in matrix.rows %}
+      <tr>
+        <td class="nowrap">{% if edit %}<a href="{{ url_for('profiles.edit_vaccination', vaccination_id=r.entry['id']) }}" title="Bearbeiten">{{ r.date|date }}</a>{% else %}{{ r.date|date }}{% endif %}</td>
+        <td><strong>{{ r.entry['product_name'] }}</strong>{% if r.entry['lot'] %}<div class="hint">{{ r.entry['lot'] }}</div>{% endif %}</td>
+        {% for cell in r.cells %}
+        {% if cell %}
+        <td class="matrix-cell on" title="{{ cell.label }}{% if cell.number %}, {{ cell.number }}. Dosis{% endif %}">{% if cell.number %}{{ cell.number }}{% else %}<span title="zählt nicht">×</span>{% endif %}<span class="sr-only"> {{ cell.label }}</span></td>
+        {% else %}
+        <td class="matrix-cell"></td>
+        {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      {% if not matrix.rows %}
+      <tr><td colspan="{{ matrix.columns|length + 2 }}" class="hint">Noch keine Impfungen erfasst.</td></tr>
+      {% endif %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="2" scope="row">Status</th>
+        {% for c in matrix.columns %}
+        {% set s = c.status %}
+        <td class="matrix-status{% if s %} status-{{ s.status }}{% endif %}"{% if s %} title="{{ c.label }}: {{ STATUS_LABELS[s.status] }}{% if s.next and s.status != 'complete' %}, empfohlen {{ s.next.recommended|date }}{% endif %}"{% endif %}>
+          {%- if s %}<span aria-hidden="true">{{ MATRIX_MARKS[s.status] }}</span><span class="sr-only">{{ c.label }}: {{ STATUS_LABELS[s.status] }}</span>{% endif -%}
+        </td>
+        {% endfor %}
+      </tr>
+    </tfoot>
+  </table>
+</div>
+<p class="hint" style="margin:0">Zahl = Dosis gegen diese Krankheit; × = gegeben, zählt aber nicht (z. B. zu früh).
+  Status: <span class="matrix-key status-overdue">!</span> überfällig, <span class="matrix-key status-due">●</span> fällig,
+  <span class="matrix-key status-upcoming">○</span> demnächst, <span class="matrix-key status-complete">✓</span> vollständig,
+  – nicht empfohlen. Eine leere Spalte mit Status heisst: noch keine Dosis erfasst.</p>
+{%- endmacro %}

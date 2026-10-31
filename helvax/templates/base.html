@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}helvax{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="apple-mobile-web-app-title" content="helvax">
+<script src="{{ url_for('static', filename='pwa.js') }}" data-sw="{{ url_for('pwa.service_worker') }}" defer></script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231D5FD1'/%3E%3Ccircle cx='12' cy='13' r='5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+</head>
+<body>
+{% block body %}
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="{{ url_for('dashboard.index') }}">
+      <span class="brand-mark">{% include '_logo.html' %}</span>
+      <span class="brand-name">helvax</span>
+    </a>
+    <nav class="mainnav" aria-label="Hauptnavigation">
+      <a href="{{ url_for('dashboard.index') }}" class="{{ 'active' if request.endpoint == 'dashboard.index' }}">Übersicht</a>
+      {% if g.user['is_admin'] %}
+      <a href="{{ url_for('admin.index') }}" class="{{ 'active' if request.endpoint in ('admin.index', 'admin.audit_log') }}">Verwaltung</a>
+      {% endif %}
+    </nav>
+    <div class="userbox">
+      <a class="user-pill" href="{{ url_for('account.index') }}" title="Konto">
+        <span class="avatar">{{ g.user['display_name'][:1]|upper }}</span>
+        <span class="user-text"><strong>{{ g.user['display_name'] }}</strong><small>{{ 'Admin' if g.user['is_admin'] else 'Konto' }}</small></span>
+      </a>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-small">Abmelden</button>
+      </form>
+    </div>
+  </div>
+</header>
+<main class="page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <p class="disclaimer">helvax ersetzt keine medizinische Beratung. Impfstatus und nächste Impfungen immer mit deiner Ärztin oder deinem Arzt abklären.</p>
+  helvax · Version {{ app_version }} · <a href="{{ url_for('privacy') }}">Datenschutz</a>
+</footer>
+<dialog class="modal" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+  <form method="dialog" class="modal-body">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-text"></p>
+    <div class="modal-actions">
+      <button type="submit" value="cancel" class="btn">Abbrechen</button>
+      <button type="submit" value="ok" id="confirm-ok" class="btn btn-primary">OK</button>
+    </div>
+  </form>
+</dialog>
+<script src="{{ url_for('static', filename='confirm.js') }}" defer></script>
+{% endblock %}
+</body>
+</html>
