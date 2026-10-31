@@ -240,6 +240,56 @@ def test_zoster_and_pneumococci_from_65():
     assert (r['zoster'].status, r['zoster'].next.recommended) == ('not_recommended', D(2030, 3, 1))
 
 
+def product_doses(antigen, *items):
+    """(date, catalogue tags) -> Dose list, as profiles.evaluate() builds it from catalogue products."""
+    return [Dose(d, antigen, i, frozenset(tags)) for i, (d, tags) in enumerate(items)]
+
+
+def test_pneumococci_from_65_depend_on_the_vaccine():
+    """S. 16: PCV20/PCV21 complete it; after PCV13 or PCV15 a higher-valent PCV at least 1 year later."""
+    birth, flags = D(1960, 1, 1), ['optin:pcv']
+    for tags in (['pcv20'], ['pcv21']):
+        r = evaluate(birth, product_doses('pcv', (D(2025, 3, 1), tags)), flags=flags)
+        assert (r['pcv'].status, r['pcv'].warnings) == ('complete', ()), tags
+    for tags in (['pcv13'], ['pcv15']):
+        r = evaluate(birth, product_doses('pcv', (D(2025, 3, 1), tags)), flags=flags)
+        assert (r['pcv'].status, r['pcv'].next.number, r['pcv'].next.earliest) == ('due', 2, D(2026, 3, 1)), tags
+        r = evaluate(birth, product_doses('pcv', (D(2026, 3, 1), tags)), flags=flags)
+        assert (r['pcv'].status, r['pcv'].next.recommended) == ('not_recommended', D(2027, 3, 1)), tags
+    r = evaluate(birth, product_doses('pcv', (D(2025, 3, 1), ['pcv13']), (D(2026, 4, 1), ['pcv20'])), flags=flags)
+    assert (r['pcv'].status, r['pcv'].warnings) == ('complete', ())
+    # Doses before 65 (e.g. as a risk person) don't count for the dose from 65
+    r = evaluate(birth, product_doses('pcv', (D(2023, 3, 1), ['pcv20'])), flags=flags)
+    assert r['pcv'].status == 'due'
+    # "Anderer Impfstoff": counts, with a warning
+    r = evaluate(birth, [Dose(D(2025, 3, 1), 'pcv')], flags=flags)
+    assert r['pcv'].status == 'complete' and 'Impfstoff unbekannt' in r['pcv'].warnings[0]
+
+
+def test_meningococci_acwy_depend_on_the_vaccine():
+    """S. 12 j), S. 19, S. 26: Menveo 2 doses at 12–23 months (at least 2 months apart), MenQuadfi 1."""
+    birth, flags = D(2025, 1, 1), ['optin:menacwy']
+    r = evaluate(birth, product_doses('menacwy', (D(2026, 2, 1), ['menquadfi'])), flags=flags)
+    assert (r['menacwy'].status, r['menacwy'].next.recommended) == ('complete', D(2036, 1, 1))  # at 11
+    r = evaluate(birth, product_doses('menacwy', (D(2026, 2, 1), ['menveo'])), flags=flags, today=D(2026, 3, 1))
+    assert (r['menacwy'].status, r['menacwy'].next.number, r['menacwy'].next.recommended) == \
+        ('upcoming', 2, D(2026, 4, 1))
+    r = evaluate(birth, product_doses('menacwy', (D(2026, 2, 1), ['menveo'])), flags=flags)
+    assert r['menacwy'].status == 'overdue'
+    two = product_doses('menacwy', (D(2026, 2, 1), ['menveo']), (D(2026, 4, 1), ['menveo']))
+    assert evaluate(birth, two, flags=flags)['menacwy'].status == 'complete'
+    # Catch-up at 19–23 months: also 2 doses with Menveo; from 24 months 1 dose
+    r = evaluate(D(2024, 9, 1), product_doses('menacwy', (D(2026, 6, 1), ['menveo'])), flags=flags)
+    assert (r['menacwy'].status, r['menacwy'].next.number) == ('overdue', 2)
+    r = evaluate(D(2024, 3, 1), product_doses('menacwy', (D(2026, 6, 1), ['menveo'])), flags=flags)
+    assert r['menacwy'].status == 'complete'
+    # No dose yet: one dose is planned; "Anderer Impfstoff": one dose, with a warning
+    r = evaluate(D(2025, 9, 1), flags=flags)
+    assert [p.number for p in r['menacwy'].plan if p.course == 'kleinkind'] == [1]
+    r = evaluate(birth, [Dose(D(2026, 2, 1), 'menacwy')], flags=flags)
+    assert r['menacwy'].status == 'complete' and 'Impfstoff unbekannt' in r['menacwy'].warnings[0]
+
+
 def test_tick_borne_encephalitis_needs_the_flag():
     r = evaluate(D(1990, 1, 1))
     assert r['tbe'].status == 'not_recommended'

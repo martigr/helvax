@@ -1,4 +1,6 @@
 """Profiles, vaccination entries and immunities: family access, validation, audit log, views."""
+import re
+
 import pytest
 
 from helvax import create_app
@@ -304,6 +306,56 @@ def test_catalogue_must_match_the_schedule(tmp_path):
     with pytest.raises(ValueError, match='unknown antigen'):
         create_app({'TESTING': True, 'DATABASE': str(tmp_path / 'x.db'),
                     'SCHEDULE_FILE': str(Path(__file__).parent / 'data' / 'test-schedule.yaml')})
+
+
+def test_swiss_catalogue(app):
+    """The real catalogue: antigens as checked against Swissmedic/SL; unauthorised products grouped last."""
+    from helvax import rules
+    with app.app_context():
+        cat = rules.catalogue()
+    assert cat.get('enflonsia').antigens == ('rsv',)
+    assert cat.get('twinrix').antigens == ('hbv',)  # hepatitis A isn't in the schedule
+    assert cat.get('adacel-polio').antigens == ('dip', 'tet', 'pert', 'polio')
+    for key in ('ppv23', 'pneumovax', 'zostavax', 'synagis', 'abrysvo', 'arexvy'):
+        assert cat.get(key) is None  # would count as the wrong antigen
+    groups = cat.groups()
+    assert groups[-1][0] == 'Nicht in der Schweiz zugelassen'
+    assert {p.key for p in groups[-1][1]} == {'hexyon', 'td-pur', 'rotateq', 'nimenrix', 'trumenba'}
+    assert all(p.tags for p in cat.products if p.antigens == ('pcv',))
+    assert cat.get('menveo').tags == {'menveo'}
+
+
+def test_catalogue_must_know_the_product_tags_of_the_schedule():
+    from pathlib import Path
+
+    from helvax import catalogue, schedule
+    from helvax.schedule import ScheduleError
+    sched = schedule.load(Path(__file__).parent.parent / 'helvax' / 'schedules' / 'ch-2026.yaml')
+    data = {'products': [{'key': 'x', 'name': 'X', 'group': 'G', 'antigens': ['pcv'], 'tags': ['pcv20']}]}
+    with pytest.raises(ScheduleError, match='product tag.*menveo, pcv21'):
+        catalogue.parse(data, sched)
+    data['products'][0]['tags'] = 'pcv20'
+    with pytest.raises(ScheduleError, match='tags must be a list'):
+        catalogue.parse(data, sched)
+
+
+def test_the_product_decides_the_next_dose(client, csrf, login):
+    """The catalogue product of an entry reaches the engine: Menveo at 12–23 months needs a second dose."""
+    t = login('alice')
+    r = client.post('/profiles/new', data={'display_name': 'Lea', 'birth_date': '2025-06-01',
+                                           'flags': ['optin:menacwy'], 'csrf_token': t})
+    pid = int(r.headers['Location'].rsplit('/', 1)[1])
+    add_vaccination(client, csrf, pid, date='2026-06-15', product='menveo')
+    page = client.get(f'/profiles/{pid}').get_data(as_text=True)
+    text = ' '.join(re.sub(r'<[^>]+>', ' ', page).split())
+    assert 'Meningokokken ACWY überfällig 2. Dosis: empfohlen seit 15.08.2026' in text
+    other = {'product': 'other', 'product_name': 'Impfstoff aus dem Ausland', 'antigens': ['menacwy']}
+    r = client.post('/profiles/new', data={'display_name': 'Tim', 'birth_date': '2025-06-01',
+                                           'flags': ['optin:menacwy'], 'csrf_token': csrf()})
+    pid = int(r.headers['Location'].rsplit('/', 1)[1])
+    add_vaccination(client, csrf, pid, date='2026-06-15', **other)
+    page = client.get(f'/profiles/{pid}').get_data(as_text=True)
+    assert 'Impfstoff unbekannt; ob eine weitere Dosis nötig ist' in page
 
 
 def test_record_as_matrix(client, csrf, profile):

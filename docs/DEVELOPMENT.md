@@ -26,7 +26,7 @@ helvax/
 ├── dates.py              # now()/today() (the only clock), Duration ('6w', '12m'), add_months, age labels
 ├── schedule.py           # load()/parse() of a schedule YAML: strict validation, frozen dataclasses
 ├── engine.py             # evaluate(): status per antigen, next dose, catch-up plan (pure functions)
-├── catalogue/            # products-ch.yaml (trade name → antigens) and its loader
+├── catalogue/            # products-ch.yaml (trade name → antigens, tags) and its loader
 ├── schedules/ch-2026.yaml  # the Swiss schedule 2026 as rules
 ├── rules.py              # the schedule and catalogue of the running app (loaded at startup)
 ├── profiles.py           # bp "profiles": profiles, vaccination entries, immunities, print view
@@ -155,6 +155,8 @@ rules:
               - {at: 4m, min_interval: 4w}
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: ...}
+              - {after: 2m, min_interval: 2m, if_previous_product: [menveo]}  # MenACWY: only after Menveo
+              - {products: [pcv20, pcv21], min_interval: 1y}  # PCV from 65: only these fill the slot
           - start_age: [3m, 6m]
             catch_up: true
             doses: [{}, {after: 2m, min_interval: 4w}, {after: 6m, min_interval: 6m}]
@@ -176,6 +178,13 @@ rules:
   (`if_missed: skip` ends the series, `doctor` shows the doctor hint, `overdue` keeps it overdue);
   `skip_from` drops the slot from that age on (adults don't catch up childhood boosters), and a dose given
   at that age counts as a later dose instead.
+- **Product-dependent doses** use the `tags` of the catalogue products (`products-ch.yaml`); the catalogue
+  must have every tag the rules name (checked at startup). `products: [tags]`: only a dose of such a product
+  fills the slot; a dose of another known product is passed over (it keeps its number, and `min_interval`
+  counts from it). `if_previous_product: [tags]`: the slot exists only if the previous dose was such a
+  product; before that dose is given, the slot isn't planned. A dose of an unknown product ("Anderer
+  Impfstoff", or a product no longer in the catalogue) fills a `products` slot and doesn't open an
+  `if_previous_product` slot, both with a warning.
 - YAML anchors (`&dt_courses`, `*dt_courses`) share identical rules (diphtheria/tetanus, MMR).
 - Don't name a key `on`, `yes` or `no`: YAML 1.1 reads them as booleans.
 
@@ -189,7 +198,10 @@ rules:
 - `next` (`PlannedDose`): `number`, `earliest`, `recommended`, `latest` (overdue after), `asap`, `label`.
 - `plan`: the missing doses from today on, each respecting the minimum intervals after the previous one
   (assumed to be given on its recommended day, or today if that has passed) and the age limits.
-- `doses`: the given doses with their numbers (`None` = not counted); `warnings` for doses given too early;
+- Input: `Dose(date, antigen, ref, product)`, one per antigen of an entry; `product` is the frozenset of the
+  catalogue product's `tags`, `None` if the product is unknown (`profiles.evaluate()` builds them).
+- `doses`: the given doses with their numbers (`None` = not counted); `warnings` for doses given too early,
+  too soon after the previous one, or of an unknown product where the rule depends on it;
   `reason` for `not_recommended`; `needs_doctor` when the schedule's detailed catch-up tables would be needed.
 
 How a rule is evaluated: immunity, `exempt_if_born_before`, `requires_flag`, `skip_if_flag` first; then each
@@ -296,4 +308,9 @@ When the BAG publishes a new schedule (usually in the first quarter):
    page references, and update `OPEN_QUESTIONS.md`.
 3. Point `SCHEDULE_FILE`'s default in `__init__.py` to the new file; adjust `tests/test_schedule_ch.py`.
 4. The catalogue (`products-ch.yaml`) needs updates when vaccines come and go; keep old products, old records
-   name them.
+   name them (unauthorised ones go into the group «Nicht in der Schweiz zugelassen»). Check it against the
+   Swissmedic list "Zugelassene Humanarzneimittel" (Excel, column "Heilmittelcode" = `Impfstoffe`, plus the RSV
+   antibodies) at https://www.swissmedic.ch/swissmedic/de/home/services/listen_neu.html, and the antigens against
+   the ingredients in the SL: `https://epl.bag.admin.ch/api/sl/public/medicinal-products?page=1&size=100&search=<name>`
+   (public JSON, IT code `08.08.` = vaccines; the SL only lists reimbursed products). Record the date of the
+   check in the file header and in `OPEN_QUESTIONS.md`.

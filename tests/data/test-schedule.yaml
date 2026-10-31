@@ -20,6 +20,8 @@ antigens:
   rsv: {label: RSV-artig, short: RSV}
   pol: {label: Arzt-artig, short: P}
   hpv: {label: HPV-artig, short: HPV}
+  acw: {label: ACW-artig, short: ACW}
+  pnc: {label: PNC-artig, short: PNC}
 
 flags:
   tick: {label: Zeckengebiet}
@@ -191,3 +193,26 @@ rules:
               - {}
               - {after: 2m, min_interval: 1m}
               - {after: 4m, min_interval: 4m}
+
+  # Product-dependent: a second dose only after product "two"
+  - antigen: acw
+    category: basic
+    ref: test acw
+    courses:
+      - ages: [2y, 6y]
+        series:
+          - start_age: [2y, 6y]
+            doses:
+              - {window: [2y, 3y]}
+              - {after: 2m, min_interval: 2m, if_previous_product: [two]}
+
+  # Product-dependent: only product "high" fills the slot, at least 1 year after another product
+  - antigen: pnc
+    category: basic
+    ref: test pnc
+    courses:
+      - ages: [65y, null]
+        series:
+          - start_age: [65y, null]
+            doses:
+              - {products: [high], min_interval: 1y}

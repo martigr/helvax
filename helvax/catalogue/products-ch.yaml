@@ -1,25 +1,33 @@
-# Vaccines on the Swiss market and the antigens they cover, for the "Impfstoff" list of a vaccination entry.
-# NOT from the BAG schedule: compiled from general knowledge of the products. Check against the
-# Spezialitätenliste (https://sl.bag.admin.ch/sl) and the product information; see OPEN_QUESTIONS.md.
-# Antigen keys must exist in the schedule file. Products that are no longer sold stay in the list, because
-# old vaccination records name them. Anything missing: "Anderer Impfstoff" with manually chosen antigens.
+# Vaccines and RSV antibodies and the antigens they cover, for the "Impfstoff" list of a vaccination entry.
+# NOT from the BAG schedule. Checked on 2026-10-31 against the Swissmedic list of authorised human medicines
+# ("Zugelassene Humanarzneimittel", as of 2026-09-30, https://www.swissmedic.ch/swissmedic/de/home/services/listen_neu.html)
+# and the Spezialitätenliste (https://sl.bag.admin.ch/sl, IT code 08.08 "Impfstoffe"); the SL only lists
+# reimbursed products, so a missing SL entry (e.g. Gardasil 9, paid through the cantonal programmes) means nothing.
+# Antigens follow the ingredients listed there. See OPEN_QUESTIONS.md ("Product catalogue").
 #
-# group: heading in the list; valency: for pneumococcal vaccines (PCV13, PCV15, ...), not used yet.
+# Antigen keys must exist in the schedule file. Products that are no longer sold stay in the list, because
+# old vaccination records name them; products not authorised in Switzerland (old or foreign records) are in the
+# last group. Products whose antigens the schedule doesn't know (PPV23, Zostavax, palivizumab, RSV vaccines,
+# hepatitis A, MenC, travel vaccines) are left out: an entry needs at least one antigen and would count wrongly.
+# Anything missing: "Anderer Impfstoff" with manually chosen antigens.
+#
+# group: heading in the list; tags: for rules that depend on the product (`products` and `if_previous_product`
+# in the schedule): the valency of pneumococcal vaccines (S. 16) and the MenACWY vaccine at 12–23 months (S. 26).
 
 products:
   # Combination vaccines for infants and children
   - {key: infanrix-hexa, name: Infanrix hexa, group: Kombinationsimpfstoffe, antigens: [dip, tet, pert, polio, hib, hbv]}
-  - {key: hexyon, name: Hexyon, group: Kombinationsimpfstoffe, antigens: [dip, tet, pert, polio, hib, hbv]}
   - {key: vaxelis, name: Vaxelis, group: Kombinationsimpfstoffe, antigens: [dip, tet, pert, polio, hib, hbv]}
   - {key: infanrix-penta, name: Infanrix DTPa-IPV+Hib, group: Kombinationsimpfstoffe, antigens: [dip, tet, pert, polio, hib]}
   - {key: infanrix-ipv, name: Infanrix DTPa-IPV, group: Kombinationsimpfstoffe, antigens: [dip, tet, pert, polio]}
   - {key: tetravac, name: Tetravac, group: Kombinationsimpfstoffe, antigens: [dip, tet, pert, polio]}
+  - {key: hiberix, name: Hiberix (Hib), group: Kombinationsimpfstoffe, antigens: [hib]}
   # Boosters for children (from 4), adolescents and adults
   - {key: boostrix, name: Boostrix (dTpa), group: Auffrischimpfungen, antigens: [dip, tet, pert]}
   - {key: boostrix-polio, name: Boostrix Polio (dTpa-IPV), group: Auffrischimpfungen, antigens: [dip, tet, pert, polio]}
   - {key: adacel, name: Adacel (dTpa), group: Auffrischimpfungen, antigens: [dip, tet, pert]}
+  - {key: adacel-polio, name: Adacel-Polio (dTpa-IPV), group: Auffrischimpfungen, antigens: [dip, tet, pert, polio]}
   - {key: revaxis, name: Revaxis (dT-IPV), group: Auffrischimpfungen, antigens: [dip, tet, polio]}
-  - {key: td-pur, name: Td-pur (dT), group: Auffrischimpfungen, antigens: [dip, tet]}
   # Measles, mumps, rubella, varicella
   - {key: priorix-tetra, name: Priorix-Tetra (MMRV), group: "Masern, Mumps, Röteln, Windpocken", antigens: [measles, mumps, rubella, varicella]}
   - {key: proquad, name: ProQuad (MMRV), group: "Masern, Mumps, Röteln, Windpocken", antigens: [measles, mumps, rubella, varicella]}
@@ -27,27 +35,36 @@ products:
   - {key: mmrvaxpro, name: M-M-RvaxPro (MMR), group: "Masern, Mumps, Röteln, Windpocken", antigens: [measles, mumps, rubella]}
   - {key: varivax, name: Varivax, group: "Masern, Mumps, Röteln, Windpocken", antigens: [varicella]}
   - {key: varilrix, name: Varilrix, group: "Masern, Mumps, Röteln, Windpocken", antigens: [varicella]}
-  # Pneumococci
-  - {key: prevenar-13, name: Prevenar 13, group: Pneumokokken, antigens: [pcv], valency: 13}
-  - {key: vaxneuvance, name: Vaxneuvance (PCV15), group: Pneumokokken, antigens: [pcv], valency: 15}
-  - {key: prevenar-20, name: Prevenar 20, group: Pneumokokken, antigens: [pcv], valency: 20}
-  - {key: capvaxive, name: Capvaxive (PCV21), group: Pneumokokken, antigens: [pcv], valency: 21}
+  # Pneumococci (conjugate vaccines only; PPV23 is a polysaccharide vaccine and doesn't count as PCV, S. 16)
+  - {key: prevenar-13, name: Prevenar 13, group: Pneumokokken, antigens: [pcv], tags: [pcv13]}
+  - {key: vaxneuvance, name: Vaxneuvance (PCV15), group: Pneumokokken, antigens: [pcv], tags: [pcv15]}
+  - {key: prevenar-20, name: Prevenar 20, group: Pneumokokken, antigens: [pcv], tags: [pcv20]}
+  - {key: capvaxive, name: Capvaxive (PCV21), group: Pneumokokken, antigens: [pcv], tags: [pcv21]}
   # Meningococci
   - {key: bexsero, name: Bexsero (MenB), group: Meningokokken, antigens: [menb]}
-  - {key: trumenba, name: Trumenba (MenB), group: Meningokokken, antigens: [menb]}
-  - {key: menquadfi, name: MenQuadfi (MenACWY), group: Meningokokken, antigens: [menacwy]}
-  - {key: nimenrix, name: Nimenrix (MenACWY), group: Meningokokken, antigens: [menacwy]}
-  - {key: menveo, name: Menveo (MenACWY), group: Meningokokken, antigens: [menacwy]}
+  - {key: menquadfi, name: MenQuadfi (MenACWY), group: Meningokokken, antigens: [menacwy], tags: [menquadfi]}
+  - {key: menveo, name: Menveo (MenACWY), group: Meningokokken, antigens: [menacwy], tags: [menveo]}
+  # Hepatitis B (Engerix-B 10/20 and HBVAXPRO 10/40 are one entry each; the dose isn't used yet)
+  - {key: engerix-b, name: Engerix-B, group: Hepatitis B, antigens: [hbv]}
+  - {key: hbvaxpro, name: HBVAXPRO, group: Hepatitis B, antigens: [hbv]}
+  # Twinrix also covers hepatitis A, which the schedule doesn't model
+  - {key: twinrix, name: Twinrix (Hepatitis A und B), group: Hepatitis B, antigens: [hbv]}
   # Others
   - {key: rotarix, name: Rotarix, group: Weitere, antigens: [rota]}
-  - {key: rotateq, name: RotaTeq, group: Weitere, antigens: [rota]}
-  - {key: engerix-b, name: Engerix-B, group: Weitere, antigens: [hbv]}
-  - {key: hbvaxpro, name: HBVAXPRO, group: Weitere, antigens: [hbv]}
   - {key: gardasil-9, name: Gardasil 9, group: Weitere, antigens: [hpv]}
   - {key: shingrix, name: Shingrix, group: Weitere, antigens: [zoster]}
+  # Long-acting RSV antibodies for infants (S. 1, S. 10); palivizumab (Synagis, monthly) is not one of them
   - {key: beyfortus, name: Beyfortus (RSV-Antikörper), group: Weitere, antigens: [rsv]}
+  - {key: enflonsia, name: Enflonsia (RSV-Antikörper), group: Weitere, antigens: [rsv]}
   - {key: encepur, name: Encepur, group: Weitere, antigens: [tbe]}
   - {key: fsme-immun, name: FSME-Immun, group: Weitere, antigens: [tbe]}
   - {key: grippe, name: Grippeimpfstoff (Saison), group: Weitere, antigens: [influenza]}
   - {key: comirnaty, name: Comirnaty (Covid-19), group: Weitere, antigens: [covid19]}
   - {key: spikevax, name: Spikevax (Covid-19), group: Weitere, antigens: [covid19]}
+  - {key: mnexspike, name: mNEXSPIKE (Covid-19), group: Weitere, antigens: [covid19]}
+  # Not (or no longer) on the Swissmedic list of 2026-09-30: for old or foreign records
+  - {key: hexyon, name: Hexyon, group: Nicht in der Schweiz zugelassen, antigens: [dip, tet, pert, polio, hib, hbv]}
+  - {key: td-pur, name: Td-pur (dT), group: Nicht in der Schweiz zugelassen, antigens: [dip, tet]}
+  - {key: rotateq, name: RotaTeq, group: Nicht in der Schweiz zugelassen, antigens: [rota]}
+  - {key: nimenrix, name: Nimenrix (MenACWY), group: Nicht in der Schweiz zugelassen, antigens: [menacwy], tags: [nimenrix]}
+  - {key: trumenba, name: Trumenba (MenB), group: Nicht in der Schweiz zugelassen, antigens: [menb]}

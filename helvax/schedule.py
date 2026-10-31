@@ -51,6 +51,9 @@ class DoseSpec:
     if_missed: str = 'overdue'            # when `until`/the window passed: overdue | skip (series ends) | doctor
     skip_from: Duration | None = None     # from this age the dose is no longer part of the series (e.g. childhood
                                           # boosters for adults); a dose given at that age counts as a later one
+    products: frozenset = frozenset()     # product tags: only a dose of such a product fills the slot; a dose of
+                                          # another known product is passed over (`min_interval` counts from it)
+    if_previous_product: frozenset = frozenset()  # the slot exists only if the previous dose had such a tag
     label: str = ''
 
 
@@ -157,6 +160,12 @@ class Schedule:
         """The opt-in flags a profile needs for this rule's supplementary parts."""
         return {f'optin:{rule.antigen}'} if self.has_supplementary(rule) else set()
 
+    @property
+    def product_tags(self):
+        """Every product tag the rules refer to (the catalogue must know them)."""
+        return {t for r in self.rules.values() for c in r.courses for s in c.series for d in s.doses
+                for t in d.products | d.if_previous_product}
+
     def has_supplementary(self, rule):
         cats = {rule.category} | {c.category for c in rule.courses if c.category} \
             | {s.category for c in rule.courses for s in c.series if s.category}
@@ -213,7 +222,7 @@ def _date(where, value):
 
 def _dose(where, d):
     _keys(where, d, ['at', 'window', 'after', 'min_age', 'min_interval', 'overdue_after', 'until', 'if_missed',
-                     'skip_from', 'label'])
+                     'skip_from', 'products', 'if_previous_product', 'label'])
     timing = [k for k in ('at', 'window', 'after') if d.get(k) is not None]
     if len(timing) > 1:
         raise ScheduleError(f'{where}: use only one of at, window, after')
@@ -224,7 +233,17 @@ def _dose(where, d):
                     min_interval=_dur(where, d.get('min_interval')),
                     overdue_after=_dur(where, d.get('overdue_after')), until=_dur(where, d.get('until')),
                     if_missed=d.get('if_missed', 'overdue'), skip_from=_dur(where, d.get('skip_from')),
+                    products=_tags(f'{where}.products', d.get('products')),
+                    if_previous_product=_tags(f'{where}.if_previous_product', d.get('if_previous_product')),
                     label=str(d.get('label', '')))
+
+
+def _tags(where, value):
+    if value is None:
+        return frozenset()
+    if not isinstance(value, list) or not value or not all(isinstance(t, str) and t for t in value):
+        raise ScheduleError(f'{where}: expected a list of product tags')
+    return frozenset(value)
 
 
 def _series(where, s):

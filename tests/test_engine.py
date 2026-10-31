@@ -253,3 +253,61 @@ def test_childhood_booster_is_skipped_for_adults():
     r = status('pol', birth, doses_of('pol', D(1990, 3, 1), D(2020, 1, 1)), D(2026, 10, 15))
     assert r.status == 'complete'
     assert r.doses[1].number == 2  # still counted
+
+
+def by_product(antigen, birth, items, today=TODAY):
+    """items: (date, product tags or None) -> AntigenStatus."""
+    dose_list = [Dose(when, antigen, i, None if tags is None else frozenset(tags)) for i, (when, tags) in
+                 enumerate(items)]
+    result = {r.antigen: r for r in engine.evaluate(Profile(birth), dose_list, TEST_SCHEDULE, today)}
+    return result[antigen]
+
+
+def test_dose_only_after_a_product():
+    """if_previous_product: the second dose exists only after product 'two'."""
+    birth = D(2024, 3, 1)
+    # No dose yet: the product isn't known, only one dose is planned
+    r = by_product('acw', birth, [], today=D(2026, 4, 1))
+    assert r.status == 'due' and [p.number for p in r.plan] == [1]
+    # After 'two': the second dose 2 months later
+    r = by_product('acw', birth, [(D(2026, 4, 1), ['two'])], today=D(2026, 4, 10))
+    assert (r.status, r.next.number, r.next.recommended, r.next.earliest) == ('upcoming', 2, D(2026, 6, 1),
+                                                                             D(2026, 6, 1))
+    r = by_product('acw', birth, [(D(2026, 4, 1), ['two']), (D(2026, 5, 1), ['two'])], today=D(2026, 6, 10))
+    assert r.status == 'complete'
+    assert r.warnings == ('Dosis 2 vom 01.05.2026: weniger als 2 Monate nach der vorherigen Dosis.',)
+    # After another product: one dose is enough; a further dose is ignored
+    r = by_product('acw', birth, [(D(2026, 4, 1), ['one'])], today=D(2026, 4, 10))
+    assert (r.status, r.next, r.warnings) == ('complete', None, ())
+    r = by_product('acw', birth, [(D(2026, 4, 1), [])], today=D(2026, 4, 10))
+    assert r.status == 'complete'
+    # Unknown product: one dose counts, with a warning
+    r = by_product('acw', birth, [(D(2026, 4, 1), None)], today=D(2026, 4, 10))
+    assert r.status == 'complete'
+    assert r.warnings == ('Dosis 1 vom 01.04.2026: Impfstoff unbekannt; ob eine weitere Dosis nötig ist, hängt '
+                          'vom Impfstoff ab.',)
+
+
+def test_dose_of_a_product():
+    """products: only 'high' fills the slot; another product is passed over, the interval counts from it."""
+    birth = D(1960, 1, 1)
+    r = by_product('pnc', birth, [], today=D(2026, 3, 1))
+    assert (r.status, r.next.recommended) == ('due', D(2026, 3, 1))
+    r = by_product('pnc', birth, [(D(2026, 3, 1), ['high'])], today=D(2026, 4, 1))
+    assert (r.status, r.warnings) == ('complete', ())
+    # Another product: still needed, at least 1 year later; not "in progress" until then
+    r = by_product('pnc', birth, [(D(2026, 3, 1), ['low'])], today=D(2026, 4, 1))
+    assert (r.status, r.next.number, r.next.earliest, r.next.recommended) == ('not_recommended', 2, D(2027, 3, 1),
+                                                                               D(2027, 3, 1))
+    assert [d.number for d in r.doses] == [1]
+    r = by_product('pnc', birth, [(D(2026, 3, 1), ['low'])], today=D(2027, 1, 1))
+    assert r.status == 'upcoming'
+    r = by_product('pnc', birth, [(D(2026, 3, 1), ['low'])], today=D(2027, 3, 2))
+    assert r.status == 'due'
+    r = by_product('pnc', birth, [(D(2026, 3, 1), ['low']), (D(2026, 9, 1), ['high'])], today=D(2026, 10, 1))
+    assert r.status == 'complete'
+    assert r.warnings == ('Dosis 2 vom 01.09.2026: weniger als 1 Jahr nach der vorherigen Dosis.',)
+    # Unknown product: fills the slot, with a warning
+    r = by_product('pnc', birth, [(D(2026, 3, 1), None)], today=D(2026, 4, 1))
+    assert r.status == 'complete'
+    assert r.warnings == ('Dosis 1 vom 01.03.2026: Impfstoff unbekannt; zählt als passende Dosis, bitte prüfen.',)

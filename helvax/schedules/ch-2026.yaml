@@ -323,7 +323,7 @@ rules:
     category: basic
     ref: "S. 6 Tab. 1 Fn. 3, 6, 16; S. 11 g); S. 15 1.5 d); S. 16; S. 17; S. 18 Tab. 2 Fn. 13"
     review: true
-    note: Ab 65 hängt die Empfehlung vom früher verwendeten Impfstoff ab (PCV13, PCV15, PPV23); bitte mit der Ärztin oder dem Arzt klären.
+    note: Ab 65 zählt nur eine Dosis PCV20 oder PCV21, nach PCV13 oder PCV15 frühestens 1 Jahr später (nach PCV15 PCV21). Wer früher PPV23 erhalten hat, klärt das Vorgehen mit der Ärztin oder dem Arzt.
     courses:
       - id: kindheit
         ages: [0d, 5y]
@@ -354,13 +354,15 @@ rules:
             catch_up: true
             doses:
               - {}
+      # S. 16: one dose of PCV20 or PCV21; after PCV13 or PCV15 (given from 65) a higher-valent PCV at least
+      # 1 year later (after PCV15: PCV21); PCV15 is no longer an option for adults (S. 2, S. 28)
       - id: ab-65
         ages: [65y, null]
         category: supplementary
         series:
           - start_age: [65y, null]
             doses:
-              - {label: Einmalige Dosis ab 65 Jahren}
+              - {label: Einmalige Dosis ab 65 Jahren, products: [pcv20, pcv21], min_interval: 1y}
 
   # --- Rotavirus: 2 oral doses, strict age limits
   - antigen: rota
@@ -415,17 +417,25 @@ rules:
   # --- Meningococci ACWY: toddlers 12–18 months (catch-up until 5) and adolescents 11–15 (catch-up until 20)
   - antigen: menacwy
     category: supplementary
-    ref: "S. 6 Tab. 1 Fn. 7; S. 12 j); S. 14 1.3 d); S. 18 Tab. 2 Fn. 19; S. 19"
+    ref: "S. 6 Tab. 1 Fn. 7; S. 12 j); S. 14 1.3 d); S. 18 Tab. 2 Fn. 19; S. 19; S. 26"
     review: true
-    note: Im Alter von 12–23 Monaten braucht es je nach Impfstoff 1 oder 2 Dosen (Abstand mindestens 2 Monate).
+    note: Im Alter von 12–23 Monaten braucht es je nach Impfstoff 1 oder 2 Dosen (Menveo 2 Dosen, MenQuadfi 1 Dosis).
     courses:
+      # S. 12 j) and S. 19: 1 or 2 doses depending on the vaccine, 2 doses with at least 2 months between them
+      # until 23 months, 1 dose from 24 months; S. 26 Fn. **: Menveo 2 doses at 12–23 months, MenQuadfi 1
       - id: kleinkind
         ages: [12m, 5y]
         series:
           - start_age: [12m, 19m]
             doses:
               - {window: [12m, 19m]}
-          - start_age: [19m, 5y]
+              - {after: 2m, min_interval: 2m, if_previous_product: [menveo]}
+          - start_age: [19m, 24m]
+            catch_up: true
+            doses:
+              - {}
+              - {after: 2m, min_interval: 2m, if_previous_product: [menveo]}
+          - start_age: [24m, 5y]
             catch_up: true
             doses:
               - {}

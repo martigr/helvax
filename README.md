@@ -29,8 +29,9 @@ All screenshots show the fictional demo family of `flask seed-demo`.
   the same profiles (children and adults, no login of their own). Other families' data stays invisible.
 - **Vaccination record** like the paper booklet: date, vaccine (trade name), what it protects against, dose,
   lot number, who vaccinated, note. Combination vaccines (e.g. DTPa-IPV-Hib-HBV) are the normal case: all
-  logic works per antigen. A catalogue maps Swiss trade names to antigens; anything else is entered as
-  "Anderer Impfstoff" with manually chosen antigens.
+  logic works per antigen. A catalogue maps Swiss trade names to antigens and tags the products that some
+  rules depend on (Menveo or MenQuadfi, PCV valency); anything else is entered as "Anderer Impfstoff" with
+  manually chosen antigens.
 - **Status per antigen** after the Swiss schedule 2026: *überfällig*, *fällig*, *demnächst*, *vollständig*,
   *nicht empfohlen*, with the recommended date, the latest date and a catch-up plan that respects minimum
   intervals and age limits (Tab. 2 of the schedule). Supplementary vaccinations (rotavirus, meningococci,
