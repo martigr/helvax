@@ -9,10 +9,11 @@
   --faint: #6B7580;
   --subtle: #F6F7F9;
   --taken: #EEF0F3;
-  --accent: #1D5FD1;
-  --accent-ink: #174BA6;
-  --accent-soft: #E6EEFB;
-  --accent-line: #C9D8F3;
+  --brand: #C8102E;
+  --accent: #2F3B48;
+  --accent-ink: #14202B;
+  --accent-soft: #E9EDF1;
+  --accent-line: #D5DAE0;
   --warm: #FB923C;
   --warm-ink: #9A3412;
   --warm-soft: #FFF1E8;
@@ -42,7 +43,7 @@ h1, h2 { margin: 0; letter-spacing: -0.01em; }
 .topbar-inner { max-width: 1360px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
 .brand:hover { color: var(--ink); }
-.brand-mark { width: 40px; height: 40px; border-radius: 12px; background: var(--accent); display: flex; align-items: center; justify-content: center; flex: none; }
+.brand-mark { width: 40px; height: 40px; border-radius: 12px; background: var(--brand); display: flex; align-items: center; justify-content: center; flex: none; }
 .brand-name { font-weight: 800; font-size: 17px; }
 .mainnav { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto; }
 .mainnav a { padding: 10px 14px; border-radius: 10px; color: var(--ink-2); font-weight: 600; font-size: 14px; text-decoration: none; }
