@@ -224,6 +224,7 @@ rules:
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: ...}
               - {after: 2m, min_interval: 2m, if_previous_product: [menveo]}  # MenACWY: only after Menveo
               - {products: [pcv20, pcv21], min_interval: 1y}  # PCV from 65: only these fill the slot
+              - {optional: true, until: 11m, min_interval: 4w}  # former 3+1: 3rd dose at 6 months
           - start_age: [3m, 6m]
             catch_up: true
             doses: [{}, {after: 2m, min_interval: 4w}, {after: 6m, min_interval: 6m}]
@@ -252,6 +253,10 @@ rules:
   product; before that dose is given, the slot isn't planned. A dose of an unknown product ("Anderer
   Impfstoff", or a product no longer in the catalogue) fills a `products` slot and doesn't open an
   `if_previous_product` slot, both with a warning.
+- **Optional doses:** `optional: true` (needs `until`) is a slot that only a dose given before `until` fills;
+  when the next dose comes later, the slot is dropped. It is never planned. Used for the third infant dose at
+  6 months of the 3+1 schedule before 2019 (S. 9), so such records count 4 doses before the boosters without
+  interval warnings.
 - YAML anchors (`&dt_courses`, `*dt_courses`) share identical rules (diphtheria/tetanus, MMR).
 - Don't name a key `on`, `yes` or `no`: YAML 1.1 reads them as booleans.
 

@@ -342,3 +342,43 @@ def test_adult_with_only_the_primary_series_needs_a_booster():
     doses = entries((D(1986, 7, 1), DT), (D(1986, 9, 1), DT), (D(1987, 5, 1), DT))
     r = evaluate(birth, doses)
     assert (r['tet'].status, r['tet'].needs_doctor, r['tet'].next.recommended) == ('overdue', False, D(2011, 5, 1))
+
+
+def test_infant_vaccinated_by_the_former_3_plus_1_schedule():
+    """Until 2018: 2, 4, 6 months, 4th dose from 12 months, at least 6 months after the 3rd (S. 9);
+    polio then needs 5 doses in childhood (S. 6 Fn. 10), pertussis 6 (S. 20 Tab. 3 Fn. 6)."""
+    birth = D(2016, 1, 10)
+    three = entries((D(2016, 3, 10), HEXA), (D(2016, 5, 10), HEXA), (D(2016, 7, 11), HEXA))
+    r = evaluate(birth, three, today=D(2016, 9, 1))
+    for a in HEXA:
+        assert (r[a].next.number, r[a].next.earliest, r[a].next.recommended, r[a].warnings) == \
+            (4, D(2017, 1, 11), D(2017, 1, 11), ()), a
+    record = three + entries((D(2017, 7, 10), HEXA), (D(2021, 3, 1), DTPA_IPV))
+    r = evaluate(birth, record)
+    assert all(not r[a].warnings for a in HEXA), {a: r[a].warnings for a in HEXA}
+    assert {a: r[a].status for a in ('polio', 'hib', 'hbv')} == {'polio': 'complete', 'hib': 'complete',
+                                                                 'hbv': 'complete'}
+    for a in DTPA:  # 6th dose at 11–15
+        assert (r[a].status, r[a].next.number, r[a].next.recommended) == ('upcoming', 6, D(2027, 1, 10)), a
+    # Also with the 4th dose at 15–24 months and the booster at 4 years
+    r = evaluate(birth, three + entries((D(2017, 12, 1), HEXA), (D(2020, 1, 15), DTPA_IPV)))
+    assert all(not r[a].warnings for a in HEXA), {a: r[a].warnings for a in HEXA}
+
+
+def test_second_dose_before_four_months_then_three_more():
+    """S. 8: 2nd dose before 4 months, then a 3rd one month later and a 4th at 12 months (given doses)."""
+    birth = D(2025, 1, 10)
+    doses = entries((D(2025, 3, 10), HEXA), (D(2025, 4, 20), HEXA), (D(2025, 5, 20), HEXA), (D(2026, 1, 12), HEXA))
+    r = evaluate(birth, doses)
+    assert {a: (r[a].status, r[a].warnings) for a in ('hib', 'hbv')} == {'hib': ('complete', ()),
+                                                                       'hbv': ('complete', ())}
+    assert (r['polio'].next.number, r['polio'].next.recommended) == (5, D(2029, 1, 10))
+
+
+def test_third_dose_from_eleven_months_completes_the_2_plus_1_schedule():
+    birth = D(2025, 1, 10)
+    doses = entries((D(2025, 3, 10), HEXA), (D(2025, 5, 12), HEXA), (D(2025, 12, 15), HEXA))
+    r = evaluate(birth, doses)
+    assert {a: (r[a].status, r[a].warnings) for a in ('hib', 'hbv')} == {'hib': ('complete', ()),
+                                                                       'hbv': ('complete', ())}
+    assert (r['polio'].next.number, r['polio'].next.recommended) == (4, D(2029, 1, 10))

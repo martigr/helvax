@@ -309,7 +309,8 @@ the command with `--user 1000:1000` and delete the file afterwards: it contains 
 The rules are a reading of the *Schweizerischer Impfplan 2026* (BAG/EKIF, published 23.02.2026, corrected
 16.04.2026; [source](https://www.bag.admin.ch/de/schweizerischer-impfplan), copy in `docs/sources/`).
 Covered: basic and supplementary vaccinations with their catch-up schemas, adult dT boosters, RSV antibodies
-for infants, influenza and Covid-19 from 65, FSME. Not covered (yet): other risk groups, travel
+for infants, influenza and Covid-19 from 65, FSME. Records of infants vaccinated by the 3+1 schedule before
+2019 (third dose at 6 months, S. 9) are recognised. Not covered (yet): other risk groups, travel
 vaccinations, premature infants, the detailed schemas for incompletely vaccinated people (helvax then says
 "Nachholschema mit Ärztin/Arzt festlegen"). Every interpretation is listed in
 [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md); corrections are very welcome.

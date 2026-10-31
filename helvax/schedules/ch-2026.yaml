@@ -12,6 +12,9 @@
 # Tab. 2 gives the third dose as "8 months after the first", written here as the interval after the second.
 # Childhood boosters have `skip_from: 16y`: adults don't catch up missed boosters (Tab. 2 Fn. 5), the next
 # dose is the adult booster.
+# Infants vaccinated by the rules until 2018 ("3+1": 2, 4, 6 months, then a 4th dose from 12 months, S. 9 and
+# S. 13 1.2 a)) have an `optional` third dose in the DTPa-IPV-Hib-HBV series: a dose before 11 months fills it,
+# the 12-month dose follows at least 6 months later. It is never planned.
 
 schedule:
   id: ch-2026
@@ -56,7 +59,7 @@ rules:
   # --- Diphtheria and tetanus: infant 2+1, boosters at 4–7 and 11–15, then dT at 25, 45, 65, every 10 years
   - antigen: dip
     category: basic
-    ref: "S. 6 Tab. 1 Fn. 13; S. 11 b); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 15 1.5 a); S. 16; S. 18 Tab. 2"
+    ref: "S. 6 Tab. 1 Fn. 13; S. 9; S. 11 b); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 15 1.5 a); S. 16; S. 18 Tab. 2"
     review: true
     booster_grace: 1y
     note: Bei unvollständiger Grundimmunisierung legt die Ärztin oder der Arzt das Nachholschema fest (Tab. 3 und 4).
@@ -68,6 +71,7 @@ rules:
             doses:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
               - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
@@ -76,6 +80,7 @@ rules:
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {after: 6m, min_interval: 6m}
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
               - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
@@ -124,7 +129,7 @@ rules:
 
   - antigen: tet
     category: basic
-    ref: "S. 6 Tab. 1 Fn. 13; S. 11 b); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 15 1.5 a); S. 16; S. 18 Tab. 2"
+    ref: "S. 6 Tab. 1 Fn. 13; S. 9; S. 11 b); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 15 1.5 a); S. 16; S. 18 Tab. 2"
     review: true
     booster_grace: 1y
     note: Bei unvollständiger Grundimmunisierung legt die Ärztin oder der Arzt das Nachholschema fest (Tab. 3 und 4).
@@ -135,7 +140,7 @@ rules:
   # then one dose at 25; from 26 no routine boosters
   - antigen: pert
     category: basic
-    ref: "S. 6 Tab. 1 Fn. 14; S. 11 c); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 18 Tab. 2 Fn. 5, 6"
+    ref: "S. 6 Tab. 1 Fn. 14; S. 9; S. 11 c); S. 13 1.2 a), 1.3 a); S. 14 1.4 a); S. 18 Tab. 2 Fn. 5, 6; S. 20 Tab. 3 Fn. 6"
     review: true
     note: Zusätzliche Dosis bei regelmässigem Kontakt mit Säuglingen unter 6 Monaten und in jeder Schwangerschaft (Kapitel 3.1, nicht berechnet).
     courses:
@@ -146,6 +151,7 @@ rules:
             doses:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
               - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
@@ -154,6 +160,7 @@ rules:
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {after: 6m, min_interval: 6m}
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
               - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
@@ -199,10 +206,11 @@ rules:
             doses:
               - {window: [25y, 26y], if_missed: skip, label: Auffrischimpfung mit 25 Jahren}
 
-  # --- Polio: infant 2+1, booster at 4–7, no further routine boosters
+  # --- Polio: infant 2+1 (3+1 until 2018: 5 doses in childhood, S. 6 Fn. 10), booster at 4–7, no further routine
+  # boosters
   - antigen: polio
     category: basic
-    ref: "S. 6 Tab. 1 Fn. 10; S. 11 d); S. 13 1.2 a); S. 18 Tab. 2 Fn. 7"
+    ref: "S. 6 Tab. 1 Fn. 10; S. 9; S. 11 d); S. 13 1.2 a); S. 18 Tab. 2 Fn. 7; S. 20 Tab. 3 Fn. 6"
     review: true
     note: Reisende in Länder mit Polio-Risiko brauchen allenfalls weitere Auffrischimpfungen (nicht berechnet).
     courses:
@@ -213,6 +221,7 @@ rules:
             doses:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
           - start_age: [3m, 6m]
@@ -220,6 +229,7 @@ rules:
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {after: 6m, min_interval: 6m}
               - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
           - start_age: [6m, 12m]
@@ -253,7 +263,8 @@ rules:
   # --- Hib: infant 2+1, catch-up until the 5th birthday, number of doses by age at the start
   - antigen: hib
     category: basic
-    ref: "S. 6 Tab. 1 Fn. 6; S. 11 e); S. 17; S. 18 Tab. 2 Fn. 8"
+    ref: "S. 6 Tab. 1 Fn. 6; S. 9; S. 11 e); S. 13 1.2 a); S. 17; S. 18 Tab. 2 Fn. 8"
+    review: true
     courses:
       - id: kindheit
         ages: [0d, 5y]
@@ -262,12 +273,14 @@ rules:
             doses:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
           - start_age: [3m, 6m]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {at: 12m, min_interval: 6m}
           - start_age: [6m, 12m]
             catch_up: true
@@ -288,7 +301,7 @@ rules:
   # --- Hepatitis B: infant 2+1 (hexavalent); otherwise preferably at 11–15 years (2 doses)
   - antigen: hbv
     category: basic
-    ref: "S. 6 Tab. 1 Fn. 2, 11, 15; S. 11 f); S. 13 1.3 b); S. 16; S. 18 Tab. 2 Fn. 9–12"
+    ref: "S. 6 Tab. 1 Fn. 2, 11, 15; S. 9; S. 11 f); S. 13 1.2 a); S. 13 1.3 b); S. 16; S. 18 Tab. 2 Fn. 9–12"
     review: true
     note: Ab 16 Jahren nur bei erhöhtem Expositionsrisiko (Kapitel 3.1 c, nicht berechnet). Neugeborene von HBsAg-positiven Müttern haben ein eigenes Schema.
     courses:
@@ -299,12 +312,14 @@ rules:
             doses:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
           - start_age: [3m, 6m]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}  # S. 9: 3rd dose at 6 months before 2019 (3+1)
               - {after: 6m, min_interval: 6m}
           - start_age: [6m, 12m]
             catch_up: true

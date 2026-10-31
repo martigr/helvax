@@ -54,6 +54,8 @@ class DoseSpec:
     products: frozenset = frozenset()     # product tags: only a dose of such a product fills the slot; a dose of
                                           # another known product is passed over (`min_interval` counts from it)
     if_previous_product: frozenset = frozenset()  # the slot exists only if the previous dose had such a tag
+    optional: bool = False                # filled only by a dose given before `until`, otherwise dropped; never
+                                          # planned (e.g. the third infant dose of the former 3+1 schedule)
     label: str = ''
 
 
@@ -222,12 +224,14 @@ def _date(where, value):
 
 def _dose(where, d):
     _keys(where, d, ['at', 'window', 'after', 'min_age', 'min_interval', 'overdue_after', 'until', 'if_missed',
-                     'skip_from', 'products', 'if_previous_product', 'label'])
+                     'skip_from', 'products', 'if_previous_product', 'optional', 'label'])
     timing = [k for k in ('at', 'window', 'after') if d.get(k) is not None]
     if len(timing) > 1:
         raise ScheduleError(f'{where}: use only one of at, window, after')
     if d.get('if_missed', 'overdue') not in IF_MISSED:
         raise ScheduleError(f'{where}: if_missed must be one of {", ".join(IF_MISSED)}')
+    if d.get('optional') and d.get('until') is None:
+        raise ScheduleError(f'{where}: an optional dose needs until')
     return DoseSpec(at=_dur(where, d.get('at')), window=_range(where, d['window']) if d.get('window') else None,
                     after=_dur(where, d.get('after')), min_age=_dur(where, d.get('min_age')),
                     min_interval=_dur(where, d.get('min_interval')),
@@ -235,7 +239,7 @@ def _dose(where, d):
                     if_missed=d.get('if_missed', 'overdue'), skip_from=_dur(where, d.get('skip_from')),
                     products=_tags(f'{where}.products', d.get('products')),
                     if_previous_product=_tags(f'{where}.if_previous_product', d.get('if_previous_product')),
-                    label=str(d.get('label', '')))
+                    optional=bool(d.get('optional', False)), label=str(d.get('label', '')))
 
 
 def _tags(where, value):

@@ -22,6 +22,7 @@ antigens:
   hpv: {label: HPV-artig, short: HPV}
   acw: {label: ACW-artig, short: ACW}
   pnc: {label: PNC-artig, short: PNC}
+  ipv: {label: IPV-artig, short: IPV}
 
 flags:
   tick: {label: Zeckengebiet}
@@ -216,3 +217,18 @@ rules:
           - start_age: [65y, null]
             doses:
               - {products: [high], min_interval: 1y}
+
+  # An optional dose: only a dose before 11 months fills it, otherwise it is dropped; never planned
+  - antigen: ipv
+    category: supplementary
+    ref: test ipv
+    courses:
+      - ages: [0d, null]
+        series:
+          - start_age: [0d, null]
+            doses:
+              - {at: 2m}
+              - {at: 4m, min_interval: 4w}
+              - {optional: true, until: 11m, min_interval: 4w}
+              - {at: 12m, min_age: 11m, min_interval: 6m}
+              - {window: [4y, 8y], min_interval: 2y}
