@@ -59,7 +59,8 @@ build and smoke test) green on PR #1.
 
 ## Phase 2 design (M6–M7)
 
-Port the matching parts of laundry-booking (`laundry/notifications.py`, `push.py`, `profile.py`,
+Port the matching parts of [laundry-booking](https://github.com/martigr/laundry-booking) (public; the push code was
+left out of the phase 1 scaffold) (`laundry/notifications.py`, `push.py`, `profile.py`,
 `static/push.js`, `templates/sw.js`, tests `test_notifications.py`, `test_push.py`) and adapt:
 
 **M6 Mail reminders**
@@ -89,7 +90,6 @@ After each milestone: `ruff check . && pytest`, update `docs/DEVELOPMENT.md`, RE
 ## Notes for the next session
 
 - Read `CLAUDE.md`, `docs/DEVELOPMENT.md` and this file first.
-- Reference repo (public): `https://github.com/martigr/laundry-booking`, clone it to compare.
 - Building the Docker image inside a Claude Code cloud sandbox fails at `pip install` because of the sandbox's
   TLS proxy. That is not a repository problem; build with a temporary copy of the Dockerfile that mounts the
   sandbox CA for pip and uses `--network host`, or rely on CI.
