@@ -26,7 +26,7 @@ Defaults chosen without asking:
 - Other families' profiles answer **404**, not 403.
 - Extra dependency: PyYAML.
 - Docker host port `127.0.0.1:5050` (5000 may be taken by laundry-booking on the same host).
-- Work happens on branch `claude/phase-1`; PRs only when the owner asks.
+- Work happens on a branch per phase (`claude/phase-1` is merged); PRs only when the owner asks.
 
 ## Milestones
 
@@ -39,21 +39,22 @@ Defaults chosen without asking:
 | M4 | Profile page (status + record table), dashboard, print view, `/schedule`, disclaimer, `seed-demo`, icons, screenshots | done |
 | M5 | Docker smoke test and compose checked, README, CLAUDE.md, DEVELOPMENT.md, encrypted backups (`age`) | done |
 | M4b | Record as a booklet-style table (`?ansicht=tabelle`), on screen and in print (owner request) | done |
+| — | Phase 1 merged into `main` (PR #1, CI green) | done |
 | — | **Owner review of phase 1** (rules in `OPEN_QUESTIONS.md`, catalogue, UI) | **open** |
 | M6 | Notifications by mail (see below) | open |
 | M7 | Web Push (VAPID) | open |
 | M8 | iCal feed per account | open |
 | — | Phase 3 (photos of the booklet, import): designed in `docs/DEVELOPMENT.md`, not built | later |
 
-Phase 1 acceptance criteria (`docs/KICKOFF.md`): all met locally. CI on GitHub has not run yet (it runs on
-pull requests and pushes to `main`).
+Phase 1 acceptance criteria (`docs/KICKOFF.md`): all met; CI (ruff, pytest, pip-audit, shellcheck, Docker
+build and smoke test) green on PR #1.
 
 ## Open points from the phase 1 review
 
 - Medical review of `OPEN_QUESTIONS.md`, in particular the app convention for "overdue" (1 month after the
   recommended date, boosters 1 year) and `skip_from: 16y` for childhood boosters.
 - Check the product catalogue `helvax/catalogue/products-ch.yaml` (not from the BAG document).
-- `LICENSE` carries the copyright holder's name (copied from the reference); decide before going public.
+- ~~`LICENSE` carries the copyright holder's name~~: decided, the name stays.
 
 ## Phase 2 design (M6–M8)
 

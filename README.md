@@ -19,6 +19,10 @@ All screenshots show the fictional demo family of `flask seed-demo`.
 |---|---|
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Profile](docs/screenshots/profile.png) |
 
+| The record as a table, like the paper booklet | On the phone |
+|---|---|
+| ![Record as a table](docs/screenshots/table.png) | <img src="docs/screenshots/phone.png" alt="Dashboard on the phone" width="260"> |
+
 ## Features
 
 - **Families and profiles.** An admin creates accounts and families. All accounts of a family see and edit
