@@ -47,7 +47,7 @@ All screenshots show the fictional demo family of `flask seed-demo`.
   source are shown in the app. Changing the file changes the results, without code changes.
 - Home screen app (PWA) with an offline page; pages are never cached.
 
-Planned: reminders by mail and Web Push, an iCal feed of due dates, photos of the paper booklet, import.
+Planned: reminders by mail and Web Push, photos of the paper booklet, import.
 
 ## Quick start (development)
 

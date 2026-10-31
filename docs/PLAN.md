@@ -25,6 +25,7 @@ Defaults chosen without asking:
 - Admins manage accounts and families but see no health data of families they don't belong to.
 - Other families' profiles answer **404**, not 403.
 - Extra dependency: PyYAML.
+- No iCal feed (decided after phase 1; `docs/KICKOFF.md` still lists it as the original brief).
 - Docker host port `127.0.0.1:5050` (5000 may be taken by laundry-booking on the same host).
 - Work happens on a branch per phase (`claude/phase-1` is merged); PRs only when the owner asks.
 
@@ -43,7 +44,7 @@ Defaults chosen without asking:
 | — | **Owner review of phase 1** (rules in `OPEN_QUESTIONS.md`, catalogue, UI) | **open** |
 | M6 | Notifications by mail (see below) | open |
 | M7 | Web Push (VAPID) | open |
-| M8 | iCal feed per account | open |
+| ~~M8~~ | ~~iCal feed per account~~: dropped by the owner (not much use here) | dropped |
 | — | Phase 3 (photos of the booklet, import): designed in `docs/DEVELOPMENT.md`, not built | later |
 
 Phase 1 acceptance criteria (`docs/KICKOFF.md`): all met; CI (ruff, pytest, pip-audit, shellcheck, Docker
@@ -56,10 +57,10 @@ build and smoke test) green on PR #1.
 - Check the product catalogue `helvax/catalogue/products-ch.yaml` (not from the BAG document).
 - ~~`LICENSE` carries the copyright holder's name~~: decided, the name stays.
 
-## Phase 2 design (M6–M8)
+## Phase 2 design (M6–M7)
 
-Port the matching parts of laundry-booking (`laundry/notifications.py`, `push.py`, `ical.py`, `profile.py`,
-`static/push.js`, `templates/sw.js`, tests `test_notifications.py`, `test_push.py`, `test_ical.py`) and adapt:
+Port the matching parts of laundry-booking (`laundry/notifications.py`, `push.py`, `profile.py`,
+`static/push.js`, `templates/sw.js`, tests `test_notifications.py`, `test_push.py`) and adapt:
 
 **M6 Mail reminders**
 - Settings per account on `/account`: channels (`remind_mail`, `remind_push`), lead times
@@ -82,13 +83,8 @@ Port the matching parts of laundry-booking (`laundry/notifications.py`, `push.py
   outbox per device. Same text rules as mail. Add `pywebpush` to `requirements.txt` and `VAPID_*` to config,
   `.env.example`, README.
 
-**M8 iCal feed**
-- `/calendar/<token>.ics` with `users.calendar_token` (column exists): all-day events on the recommended date
-  of each due/upcoming group of the watched profiles, SUMMARY "Impfung prüfen: Mia" (no antigen), link in
-  DESCRIPTION. Create/renew/delete the link on `/account`. The access log already redacts `/calendar/` tokens.
-
 After each milestone: `ruff check . && pytest`, update `docs/DEVELOPMENT.md`, README, the privacy page
-(`templates/privacy.html`: new data such as push endpoints and the calendar link) and this file.
+(`templates/privacy.html`: new data such as push endpoints) and this file.
 
 ## Notes for the next session
 

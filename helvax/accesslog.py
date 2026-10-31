@@ -1,4 +1,4 @@
-"""Gunicorn access log without the secret tokens of mail links and calendar feeds.
+"""Gunicorn access log without the secret tokens of mail links.
 
 Used by the Dockerfile (`--logger-class helvax.accesslog.RedactingLogger`). Reset links are valid
 for an hour, so whoever reads the log could otherwise take over the account.
@@ -7,8 +7,8 @@ import re
 
 from gunicorn.glogging import Logger
 
-# Path segment after these prefixes is a token (see the routes in auth.py, account.py and ical.py)
-TOKEN_PATH = re.compile(r'(/(?:reset-password|unsubscribe|verify-email|calendar)/)[^/?#\s]+')
+# Path segment after these prefixes is a token (see the routes in auth.py and account.py)
+TOKEN_PATH = re.compile(r'(/(?:reset-password|unsubscribe|verify-email)/)[^/?#\s]+')
 
 
 def redact(text):

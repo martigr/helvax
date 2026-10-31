@@ -18,7 +18,7 @@ def add_headers(response):
     h.setdefault('Content-Security-Policy', CSP)
     h.setdefault('X-Content-Type-Options', 'nosniff')
     h.setdefault('X-Frame-Options', 'DENY')  # for browsers without frame-ancestors
-    # Reset, unsubscribe and calendar links carry their token in the path; don't hand it to other sites
+    # Reset, unsubscribe and confirmation links carry their token in the path; don't hand it to other sites
     h.setdefault('Referrer-Policy', 'no-referrer')
     h.setdefault('Cross-Origin-Opener-Policy', 'same-origin')
     h.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()')

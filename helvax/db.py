@@ -27,7 +27,6 @@ SCHEMA = [
         email TEXT,
         email_verified INTEGER NOT NULL DEFAULT 0,
         session_version INTEGER NOT NULL DEFAULT 0,
-        calendar_token TEXT UNIQUE,
         family_id INTEGER REFERENCES families(id) ON DELETE SET NULL
     )
     """,

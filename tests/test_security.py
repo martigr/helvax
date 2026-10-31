@@ -247,7 +247,7 @@ def test_access_log_hides_tokens():
                'HTTP_REFERER': 'https://hx.test/unsubscribe/SECRET2'}
     resp = SimpleNamespace(status='200 OK', sent=10, headers=[])
     req = SimpleNamespace(headers=[('REFERER', 'https://hx.test/verify-email/SECRET3'),
-                                   ('X-ORIGINAL-URI', '/calendar/SECRET4.ics')])
+                                   ('X-ORIGINAL-URI', '/unsubscribe/SECRET4')])
     atoms = RedactingLogger(Config()).atoms(resp, req, environ, timedelta(seconds=1))
     assert atoms['r'] == 'GET /reset-password/***?x=1 HTTP/1.1'
     assert atoms['U'] == '/reset-password/***'

@@ -76,7 +76,7 @@ accounts (`alice` admin and `bob` in family *Muster*, `carol` in family *Beispie
 families                         users
 ────────                         ─────
 id    INTEGER PK                 id, username (lowercase, unique), password (werkzeug hash), display_name,
-name  TEXT UNIQUE NOCASE         is_admin, email, email_verified, session_version, calendar_token (phase 2),
+name  TEXT UNIQUE NOCASE         is_admin, email, email_verified, session_version,
                                  family_id → families ON DELETE SET NULL
 
 profiles                         profile_flags
