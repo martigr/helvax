@@ -181,6 +181,19 @@ td.actions a { font-weight: 600; margin-left: 12px; }
 .field textarea, .field input[type=date] { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface); width: 100%; }
 .danger-zone { border-color: #F5C2BE; }
 
+/* Record as a matrix like the paper booklet: antigen names written upwards */
+.record-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.matrix { width: auto; min-width: 100%; }
+.matrix th, .matrix td { border: 1px solid var(--border); }
+.matrix th.matrix-antigen { vertical-align: bottom; padding: 8px 4px; width: 34px; }
+.matrix th.matrix-antigen span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--ink-2); }
+.matrix th.matrix-date, .matrix th.matrix-product { vertical-align: bottom; }
+.matrix td.matrix-cell { text-align: center; vertical-align: middle; padding: 6px 4px; font-weight: 800; }
+.matrix tr > :first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+.matrix td.matrix-cell.on { background: var(--accent-soft); color: var(--accent-ink); }
+.matrix tbody tr:nth-child(even) td:not(.on) { background: var(--subtle); }
+@media print { .matrix tr > :first-child { position: static; } }
+
 /* --- Print view (browser "Save as PDF") --------------------------------- */
 .print-page { max-width: 900px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); }
 .print-actions { display: flex; gap: 8px; }
@@ -194,7 +207,9 @@ td.actions a { font-weight: 600; margin-left: 12px; }
   .no-print, .topbar, .site-footer, .modal { display: none !important; }
   .print-page { padding: 0; max-width: none; }
   .print-record { page-break-inside: auto; }
-  .print-record tr { page-break-inside: avoid; }
+  .print-record tr, .matrix tr { page-break-inside: avoid; }
+  .matrix td.matrix-cell.on { background: none; color: #000; }
+  .matrix th, .matrix td { border-color: #999; }
   a { color: inherit; text-decoration: none; }
 }
 

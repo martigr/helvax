@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% from '_status.html' import badge, next_text, dose_label %}
+{% from '_record_matrix.html' import record_matrix %}
 {% block title %}{{ profile['display_name'] }} – helvax{% endblock %}
 {% block content %}
 <div class="page-head">
@@ -10,7 +11,7 @@
   <div class="toolbar">
     <a class="btn btn-primary" href="{{ url_for('profiles.new_vaccination', profile_id=profile['id']) }}">Impfung erfassen</a>
     <a class="btn" href="{{ url_for('profiles.edit', profile_id=profile['id']) }}">Profil bearbeiten</a>
-    <a class="btn" href="{{ url_for('profiles.print_view', profile_id=profile['id']) }}">Drucken</a>
+    <a class="btn" href="{{ url_for('profiles.print_view', profile_id=profile['id'], ansicht=view) }}">Drucken</a>
   </div>
 </div>
 
@@ -65,8 +66,19 @@
 </section>
 
 <section class="card" id="impfausweis" aria-labelledby="record-h">
-  <h2 id="record-h">Impfausweis</h2>
-  {% if rows %}
+  <div class="record-head">
+    <h2 id="record-h">Impfausweis</h2>
+    {% if rows %}
+    <nav class="segmented" aria-label="Ansicht des Impfausweises">
+      {% for key, label in views.items() %}
+      <a href="{{ url_for('profiles.show', profile_id=profile['id'], ansicht=key) }}#impfausweis"{% if key == view %} class="active" aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
+  </div>
+  {% if rows and view == 'tabelle' %}
+  {{ record_matrix(matrix, edit=true) }}
+  {% elif rows %}
   <div class="table-wrap">
     <table class="record">
       <thead><tr><th>Datum</th><th>Impfstoff</th><th>Schützt gegen (Dosis)</th><th>Charge</th><th>Geimpft von</th><th><span class="sr-only">Aktionen</span></th></tr></thead>

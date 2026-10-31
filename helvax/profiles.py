@@ -109,6 +109,29 @@ def record_rows(vaccinations, antigens, numbers):
     return rows
 
 
+def record_matrix(rows):
+    """The record as a matrix like the paper booklet: one row per entry, one column per antigen that occurs
+    in the record (in schedule order). Cells are the antigen dicts of `record_rows()` (or None)."""
+    schedule = rules.schedule()
+    present = {a['key'] for r in rows for a in r['antigens']}
+    columns = [k for k in schedule.antigens if k in present] + sorted(present - set(schedule.antigens))
+    return {'columns': [{'key': k, 'label': schedule.antigens[k].label if k in schedule.antigens else k,
+                         'short': schedule.antigens[k].short if k in schedule.antigens else k} for k in columns],
+            'rows': [{**r, 'cells': [next((a for a in r['antigens'] if a['key'] == k), None) for k in columns]}
+                     for r in rows]}
+
+
+VIEWS = {'liste': 'Liste', 'tabelle': 'Tabelle'}
+
+
+def record_view():
+    """?ansicht=liste|tabelle: how the vaccination record is shown (default: list); 400 for anything else."""
+    view = request.args.get('ansicht', 'liste')
+    if view not in VIEWS:
+        abort(400)
+    return view
+
+
 def group_actionable(statuses):
     """Due/upcoming statuses with the same next dose (e.g. the antigens of one combination vaccine) as one
     group: [{'status', 'labels', 'first'}], most urgent first."""
@@ -178,9 +201,10 @@ def show(profile_id):
     statuses, numbers, record = evaluate(profile)
     vaccinations, antigens, immunities, flags = record
     schedule = rules.schedule()
+    rows = record_rows(vaccinations, antigens, numbers)
     return render_template('profile.html', profile=profile, birth=dates.parse_day(profile['birth_date']),
-                           statuses=statuses, groups=group_actionable(statuses),
-                           rows=record_rows(vaccinations, antigens, numbers),
+                           statuses=statuses, groups=group_actionable(statuses), rows=rows,
+                           view=record_view(), views=VIEWS, matrix=record_matrix(rows),
                            immunities=immunities, immunity_kinds=IMMUNITY_KINDS, schedule=schedule,
                            active_flags=[schedule.flags[f] for f in sorted(flags) if f in schedule.flags],
                            today=dates.today(), max_note=MAX_NOTE)
@@ -192,8 +216,9 @@ def print_view(profile_id):
     profile = get_family_profile(profile_id)
     statuses, numbers, record = evaluate(profile)
     vaccinations, antigens, immunities, _ = record
+    rows = record_rows(vaccinations, antigens, numbers)
     return render_template('profile_print.html', profile=profile, birth=dates.parse_day(profile['birth_date']),
-                           statuses=statuses, rows=record_rows(vaccinations, antigens, numbers),
+                           statuses=statuses, rows=rows, view=record_view(), matrix=record_matrix(rows),
                            immunities=immunities, immunity_kinds=IMMUNITY_KINDS, today=dates.today())
 
 

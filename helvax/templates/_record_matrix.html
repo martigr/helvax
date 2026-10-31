@@ -1,0 +1,31 @@
+{# The vaccination record as a matrix like the paper booklet: a row per entry, a column per antigen,
+   the dose number where the vaccine covers the antigen. `edit`: link the dates to the edit form. #}
+{% macro record_matrix(matrix, edit=false) -%}
+<div class="table-wrap">
+  <table class="record matrix">
+    <thead>
+      <tr>
+        <th class="matrix-date">Datum</th>
+        <th class="matrix-product">Impfstoff<br><span class="hint">Charge</span></th>
+        {% for c in matrix.columns %}<th class="matrix-antigen" scope="col"><span title="{{ c.label }}">{{ c.label }}</span></th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in matrix.rows %}
+      <tr>
+        <td class="nowrap">{% if edit %}<a href="{{ url_for('profiles.edit_vaccination', vaccination_id=r.entry['id']) }}" title="Bearbeiten">{{ r.date|date }}</a>{% else %}{{ r.date|date }}{% endif %}</td>
+        <td><strong>{{ r.entry['product_name'] }}</strong>{% if r.entry['lot'] %}<div class="hint">{{ r.entry['lot'] }}</div>{% endif %}</td>
+        {% for cell in r.cells %}
+        {% if cell %}
+        <td class="matrix-cell on" title="{{ cell.label }}{% if cell.number %}, {{ cell.number }}. Dosis{% endif %}">{% if cell.number %}{{ cell.number }}{% else %}<span title="zählt nicht">×</span>{% endif %}<span class="sr-only"> {{ cell.label }}</span></td>
+        {% else %}
+        <td class="matrix-cell"></td>
+        {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="hint" style="margin:0">Zahl = Dosis gegen diese Krankheit; × = gegeben, zählt aber nicht (z. B. zu früh).</p>
+{%- endmacro %}

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% from '_status.html' import next_text, dose_label %}
+{% from '_record_matrix.html' import record_matrix %}
 {% block title %}Impfausweis {{ profile['display_name'] }} – helvax{% endblock %}
 {% block body %}
 <main class="print-page">
@@ -13,7 +14,9 @@
   </header>
 
   <h2>Impfungen</h2>
-  {% if rows %}
+  {% if rows and view == 'tabelle' %}
+  {{ record_matrix(matrix) }}
+  {% elif rows %}
   <table class="record print-record">
     <thead><tr><th>Datum</th><th>Impfstoff</th><th>Schützt gegen (Dosis)</th><th>Charge</th><th>Geimpft von</th></tr></thead>
     <tbody>

@@ -304,3 +304,29 @@ def test_catalogue_must_match_the_schedule(tmp_path):
     with pytest.raises(ValueError, match='unknown antigen'):
         create_app({'TESTING': True, 'DATABASE': str(tmp_path / 'x.db'),
                     'SCHEDULE_FILE': str(Path(__file__).parent / 'data' / 'test-schedule.yaml')})
+
+
+def test_record_as_matrix(client, csrf, profile):
+    """?ansicht=tabelle: one row per entry, one column per antigen of the record, dose numbers in the cells."""
+    add_vaccination(client, csrf, profile, date='2026-03-10', lot='A21CB')
+    add_vaccination(client, csrf, profile, date='2026-05-12')
+    add_vaccination(client, csrf, profile, date='2026-05-12', product='prevenar-13')
+    page = client.get(f'/profiles/{profile}?ansicht=tabelle').get_data(as_text=True)
+    assert 'class="record matrix"' in page and 'aria-current="page">Tabelle</a>' in page
+    head = page.split('<thead>')[1].split('</thead>')[0]
+    # Columns in schedule order, only antigens that occur in the record
+    columns = [part.split('</span>')[0] for part in head.split('<span title="')[1:]]
+    assert [c.split('">')[1] for c in columns] == [
+        'Diphtherie', 'Tetanus', 'Pertussis (Keuchhusten)', 'Kinderlähmung (Polio)',
+        'Haemophilus influenzae Typ b', 'Hepatitis B', 'Pneumokokken']
+    body = page.split('<tbody>')[1].split('</tbody>')[0]
+    rows = body.split('<tr>')[1:]
+    assert len(rows) == 3 and 'A21CB' in rows[0]
+    assert rows[1].count('class="matrix-cell on"') == 6 and rows[1].count('>2<span class="sr-only">') == 6
+    assert rows[2].count('class="matrix-cell on"') == 1 and '>1<span class="sr-only"> Pneumokokken' in rows[2]
+    assert '/print?ansicht=tabelle' in page
+    printed = client.get(f'/profiles/{profile}/print?ansicht=tabelle').get_data(as_text=True)
+    assert 'class="record matrix"' in printed and '/vaccinations/' not in printed  # no edit links on paper
+    # Default is the list
+    assert 'class="record matrix"' not in client.get(f'/profiles/{profile}').get_data(as_text=True)
+    assert client.get(f'/profiles/{profile}?ansicht=nope').status_code == 400
