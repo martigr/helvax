@@ -18,6 +18,9 @@
   --warm-soft: #FFF1E8;
   --warm-line: #FCD9BF;
   --danger: #B42318;
+  --danger-soft: #FEECEB;
+  --ok: #067647;
+  --ok-soft: #E7F6EC;
   --radius: 18px;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--ink);
@@ -136,6 +139,64 @@ td.actions form { display: inline-block; margin: 2px 0 2px 12px; white-space: no
 .privacy ul { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .inline-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 16px; background: var(--subtle); border-radius: 14px; }
 .inline-form .field { flex: 1 1 160px; }
+
+/* --- Vaccination status ------------------------------------------------ */
+.status-badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.status-overdue { background: var(--danger-soft); color: var(--danger); }
+.status-due { background: var(--warm-soft); color: var(--warm-ink); }
+.status-upcoming { background: var(--accent-soft); color: var(--accent-ink); }
+.status-complete { background: var(--ok-soft); color: var(--ok); }
+.status-not_recommended { background: var(--taken); color: var(--muted); }
+.status-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.status-item { border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.status-item-overdue { border-left-color: var(--danger); }
+.status-item-due { border-left-color: var(--warm); }
+.status-item-upcoming { border-left-color: var(--accent); }
+.status-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.doctor { font-weight: 700; color: var(--danger); }
+.warn-text { color: var(--warm-ink); }
+.status-more summary { cursor: pointer; font-weight: 700; font-size: 14px; min-height: 32px; }
+.status-compact { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+
+.due-list, .profile-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.due-list li, .profile-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--taken); }
+.due-list li:first-child, .profile-list li:first-child { border-top: none; }
+.due-list a, .profile-list a { display: flex; flex-direction: column; gap: 2px; color: var(--ink); text-decoration: none; min-width: 0; }
+.profile-list a { flex-direction: row; align-items: center; gap: 12px; }
+.profile-list small { display: block; font-size: 13px; color: var(--muted); }
+.due-list a:hover .due-who, .profile-list a:hover strong { color: var(--accent); }
+.due-who { font-weight: 800; }
+.due-what { font-size: 14px; }
+
+/* --- Vaccination record ------------------------------------------------ */
+.record td { vertical-align: top; }
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.chips li { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 8px; background: var(--subtle); border: 1px solid var(--border); white-space: nowrap; }
+.dose-no { display: inline-block; min-width: 18px; text-align: center; border-radius: 6px; background: var(--ink); color: #fff; font-size: 11px; padding: 0 4px; }
+.dose-no.muted { background: var(--border-strong); }
+td.actions a { font-weight: 600; margin-left: 12px; }
+.antigen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); column-gap: 16px; }
+.antigen-grid .check { min-height: 36px; }
+.dose-field { margin-bottom: 8px; }
+.field textarea, .field input[type=date] { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface); width: 100%; }
+.danger-zone { border-color: #F5C2BE; }
+
+/* --- Print view (browser "Save as PDF") --------------------------------- */
+.print-page { max-width: 900px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); }
+.print-actions { display: flex; gap: 8px; }
+.print-head h1 { font-size: 26px; }
+.print-head p { margin: 4px 0 0; color: var(--ink-2); }
+.print-page h2 { font-size: 17px; margin-top: 12px; }
+.print-record th, .print-record td { padding: 6px 6px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.print-note { font-size: 12px; color: var(--muted); margin-top: 16px; }
+@media print {
+  body { background: #fff; }
+  .no-print, .topbar, .site-footer, .modal { display: none !important; }
+  .print-page { padding: 0; max-width: none; }
+  .print-record { page-break-inside: auto; }
+  .print-record tr { page-break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+}
 
 /* --- Login ------------------------------------------------------------- */
 .login { min-height: 100vh; display: flex; flex-wrap: wrap; }

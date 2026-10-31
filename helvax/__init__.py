@@ -44,6 +44,9 @@ def create_app(test_config=None):
         # The vaccination schedule (rules) file; default: the newest one shipped in helvax/schedules/
         SCHEDULE_FILE=os.environ.get('SCHEDULE_FILE') or os.path.join(os.path.dirname(__file__), 'schedules',
                                                                        'ch-2026.yaml'),
+        # Vaccine trade names and their antigens
+        CATALOGUE_FILE=os.environ.get('CATALOGUE_FILE') or os.path.join(os.path.dirname(__file__), 'catalogue',
+                                                                         'products-ch.yaml'),
     )
     if test_config:
         app.config.update(test_config)
@@ -61,8 +64,25 @@ def create_app(test_config=None):
         n = app.config['TRUSTED_PROXIES']
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=n, x_proto=n)
 
-    from . import account, admin, auth, cli, dashboard, db, mail, privacy, pwa, security
+    from . import (
+        account,
+        admin,
+        auth,
+        cli,
+        dashboard,
+        dates,
+        db,
+        engine,
+        mail,
+        privacy,
+        profiles,
+        pwa,
+        rules,
+        schedule,
+        security,
+    )
 
+    rules.init_app(app)
     db.ensure_writable(app.config['DATABASE'])
 
     db.init_app(app)
@@ -72,13 +92,19 @@ def create_app(test_config=None):
     privacy.init_app(app)
     app.register_blueprint(auth.bp)
     app.register_blueprint(dashboard.bp)
+    app.register_blueprint(profiles.bp)
     app.register_blueprint(account.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(pwa.bp)
 
+    app.jinja_env.filters['date'] = dates.fmt_date
+    app.jinja_env.filters['isodate'] = lambda value: dates.fmt_date(dates.parse_day(value))
+    app.jinja_env.globals['STATUS_LABELS'] = engine.STATUS_LABELS
+    app.jinja_env.globals['CATEGORIES'] = schedule.CATEGORIES
+
     @app.context_processor
     def template_globals():
-        return {'mail_enabled': mail.is_configured(), 'app_version': __version__}
+        return {'mail_enabled': mail.is_configured(), 'app_version': __version__, 'schedule': rules.schedule()}
 
     @app.route('/health')
     def health():

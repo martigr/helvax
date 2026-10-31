@@ -1,0 +1,304 @@
+"""Profiles, vaccination entries and immunities: family access, validation, audit log, views."""
+import pytest
+
+from helvax import create_app
+
+HEXA = ['dip', 'tet', 'pert', 'polio', 'hib', 'hbv']
+
+
+@pytest.fixture
+def profile(client, login):
+    """Alice (family Muster) creates the profile 'Mia', born 2026-01-10; returns its id."""
+    t = login('alice')
+    r = client.post('/profiles/new', data={'display_name': 'Mia', 'birth_date': '2026-01-10',
+                                           'flags': ['optin:menb'], 'csrf_token': t})
+    assert r.status_code == 302
+    return int(r.headers['Location'].rsplit('/', 1)[1])
+
+
+def add_vaccination(client, csrf, profile_id, **fields):
+    data = {'date': '2026-03-10', 'product': 'infanrix-hexa', 'csrf_token': csrf(), **fields}
+    return client.post(f'/profiles/{profile_id}/vaccinations/new', data=data)
+
+
+# --- Profiles ------------------------------------------------------------------------------------
+
+def test_create_profile(client, query, profile):
+    assert query('SELECT family_id, display_name, birth_date FROM profiles') == [(1, 'Mia', '2026-01-10')]
+    assert query('SELECT flag FROM profile_flags') == [('optin:menb',)]
+    page = client.get(f'/profiles/{profile}').get_data(as_text=True)
+    assert '<h1>Mia</h1>' in page and 'Geboren am 10.01.2026' in page
+    assert 'Schweizerischer Impfplan 2026 (ch-2026 (Stand 16.04.2026))' in page
+    assert 'Keine medizinische Beratung' in page
+
+
+def test_profile_validation(client, login, query):
+    t = login('bob')
+    for data in [{'display_name': '', 'birth_date': '2020-01-01'},
+                 {'display_name': 'x' * 41, 'birth_date': '2020-01-01'},
+                 {'display_name': 'Leo', 'birth_date': '2027-01-01'},  # future (clock: 2026-10-15)
+                 {'display_name': 'Leo', 'birth_date': '01.01.2020'}]:
+        assert client.post('/profiles/new', data={**data, 'csrf_token': t}).status_code == 400
+    r = client.post('/profiles/new', data={'display_name': 'Leo', 'birth_date': '2020-01-01', 'flags': 'nope',
+                                           'csrf_token': t})
+    assert r.status_code == 400
+    assert query('SELECT COUNT(*) FROM profiles') == [(0,)]
+
+
+def test_family_members_share_profiles(client, app, login, profile):
+    login('bob')
+    assert 'Mia' in client.get('/').get_data(as_text=True)
+    assert client.get(f'/profiles/{profile}').status_code == 200
+
+
+def test_other_family_gets_404(client, csrf, login, query, profile):
+    t = add_vaccination(client, csrf, profile)  # as alice
+    vid = query('SELECT id FROM vaccinations')[0][0]
+    client.post(f'/profiles/{profile}/immunities', data={'antigen': 'varicella', 'kind': 'disease',
+                                                         'csrf_token': csrf()})
+    iid = query('SELECT id FROM immunities')[0][0]
+    t = login('carol')
+    assert 'Mia' not in client.get('/').get_data(as_text=True)
+    for url in [f'/profiles/{profile}', f'/profiles/{profile}/edit', f'/profiles/{profile}/print',
+                f'/profiles/{profile}/vaccinations/new', f'/vaccinations/{vid}/edit']:
+        assert client.get(url).status_code == 404, url
+    for url, data in [(f'/profiles/{profile}/edit', {'display_name': 'X', 'birth_date': '2020-01-01'}),
+                      (f'/profiles/{profile}/delete', {}),
+                      (f'/profiles/{profile}/vaccinations/new', {'date': '2026-05-01', 'product': 'hexyon'}),
+                      (f'/vaccinations/{vid}/edit', {'date': '2026-05-01', 'product': 'hexyon'}),
+                      (f'/vaccinations/{vid}/delete', {}),
+                      (f'/profiles/{profile}/immunities', {'antigen': 'measles', 'kind': 'disease'}),
+                      (f'/immunities/{iid}/delete', {})]:
+        assert client.post(url, data={**data, 'csrf_token': t}).status_code == 404, url
+    assert query('SELECT display_name FROM profiles') == [('Mia',)]
+    assert query('SELECT COUNT(*) FROM vaccinations') == [(1,)]
+    assert query('SELECT COUNT(*) FROM immunities') == [(1,)]
+    assert client.get('/profiles/999').status_code == 404
+
+
+def test_account_without_family_has_no_profiles(client, app, login):
+    with app.app_context():
+        from helvax.db import get_db
+        with get_db() as con:
+            con.execute("UPDATE users SET family_id = NULL WHERE username = 'carol'")
+    t = login('carol')
+    assert 'Noch keine Familie' in client.get('/').get_data(as_text=True)
+    assert client.get('/profiles/new').status_code == 403
+    r = client.post('/profiles/new', data={'display_name': 'X', 'birth_date': '2020-01-01', 'csrf_token': t})
+    assert r.status_code == 403
+
+
+def test_edit_profile(client, csrf, query, profile):
+    r = client.post(f'/profiles/{profile}/edit', data={'display_name': 'Mia M.', 'birth_date': '2026-01-11',
+                                                       'flags': ['optin:rota', 'rsv_maternal'],
+                                                       'csrf_token': csrf()})
+    assert r.status_code == 302
+    assert query('SELECT display_name, birth_date FROM profiles') == [('Mia M.', '2026-01-11')]
+    assert query('SELECT flag FROM profile_flags ORDER BY flag') == [('optin:rota',), ('rsv_maternal',)]
+    page = client.get(f'/profiles/{profile}/edit').get_data(as_text=True)
+    assert 'value="optin:rota" checked' in page and 'value="optin:menb">' in page
+    # The birth date can't move after the first vaccination
+    add_vaccination(client, csrf, profile, date='2026-03-10')
+    r = client.post(f'/profiles/{profile}/edit', data={'display_name': 'Mia', 'birth_date': '2026-04-01',
+                                                       'csrf_token': csrf()})
+    assert r.status_code == 400
+    assert query('SELECT birth_date FROM profiles') == [('2026-01-11',)]
+
+
+def test_delete_profile_deletes_everything(client, csrf, query, profile):
+    add_vaccination(client, csrf, profile)
+    client.post(f'/profiles/{profile}/immunities', data={'antigen': 'varicella', 'kind': 'disease',
+                                                         'csrf_token': csrf()})
+    page = client.get(f'/profiles/{profile}').get_data(as_text=True)
+    assert 'data-confirm-title="Profil löschen?"' in page
+    assert client.post(f'/profiles/{profile}/delete', data={'csrf_token': csrf()}).status_code == 302
+    for table in ('profiles', 'profile_flags', 'vaccinations', 'vaccination_antigens', 'immunities'):
+        assert query(f'SELECT COUNT(*) FROM {table}') == [(0,)], table
+
+
+# --- Vaccination entries -------------------------------------------------------------------------
+
+def test_combination_vaccine_covers_its_antigens(client, csrf, query, profile):
+    r = add_vaccination(client, csrf, profile, lot='A21CB', administered_by='Praxis Beispiel', note='links')
+    assert r.status_code == 302
+    assert query('SELECT date, product_key, product_name, lot, administered_by, note FROM vaccinations') == [
+        ('2026-03-10', 'infanrix-hexa', 'Infanrix hexa', 'A21CB', 'Praxis Beispiel', 'links')]
+    assert sorted(a for (a,) in query('SELECT antigen FROM vaccination_antigens')) == sorted(HEXA)
+    page = client.get(f'/profiles/{profile}').get_data(as_text=True)
+    assert 'Infanrix hexa' in page and 'A21CB' in page
+    assert 'Diphtherie <span class="dose-no">1</span>' in page
+    # Every antigen of the vaccine moved on to dose 2; pneumococci (not in it) still wait for dose 1
+    assert page.count('2. Dosis: ') == 6
+    assert 'Pneumokokken</strong> <span class="status-badge status-overdue">' in page
+
+
+def test_checkboxes_dont_change_a_catalogue_product(client, csrf, query, profile):
+    add_vaccination(client, csrf, profile, antigens=['measles'])
+    assert 'measles' not in [a for (a,) in query('SELECT antigen FROM vaccination_antigens')]
+
+
+def test_other_product(client, csrf, query, profile):
+    r = add_vaccination(client, csrf, profile, product='other', product_name='Impfstoff aus dem Ausland',
+                        antigens=['measles', 'mumps', 'rubella'], date='2026-10-12')
+    assert r.status_code == 302
+    assert query('SELECT product_key, product_name FROM vaccinations') == [(None, 'Impfstoff aus dem Ausland')]
+    assert sorted(a for (a,) in query('SELECT antigen FROM vaccination_antigens')) == ['measles', 'mumps', 'rubella']
+
+
+@pytest.mark.parametrize('fields, message', [
+    ({'date': ''}, 'gültiges Impfdatum'),
+    ({'date': '2025-12-31'}, 'vor dem Geburtsdatum'),
+    ({'date': '2026-10-16'}, 'in der Zukunft'),
+    ({'product': ''}, 'Impfstoff auswählen'),
+    ({'product': 'unknown'}, 'Impfstoff auswählen'),
+    ({'product': 'other', 'antigens': ['measles']}, 'Namen des Impfstoffs'),
+    ({'product': 'other', 'product_name': 'X'}, 'wogegen'),
+    ({'lot': 'x' * 41}, 'Charge: höchstens 40'),
+    ({'note': 'x' * 201}, 'Notiz: höchstens 200'),
+])
+def test_vaccination_validation(client, csrf, query, profile, fields, message):
+    r = add_vaccination(client, csrf, profile, **fields)
+    assert r.status_code == 400
+    assert message in r.get_data(as_text=True)
+    assert query('SELECT COUNT(*) FROM vaccinations') == [(0,)]
+
+
+def test_unknown_antigen_is_rejected(client, csrf, profile):
+    r = add_vaccination(client, csrf, profile, product='other', product_name='X', antigens=['nope'])
+    assert r.status_code == 400
+
+
+def test_save_and_add_another(client, csrf, profile):
+    r = add_vaccination(client, csrf, profile, another='1')
+    assert r.headers['Location'] == f'/profiles/{profile}/vaccinations/new'
+
+
+def test_edit_vaccination_with_dose_override(client, csrf, query, profile):
+    add_vaccination(client, csrf, profile)
+    vid = query('SELECT id FROM vaccinations')[0][0]
+    page = client.get(f'/vaccinations/{vid}/edit').get_data(as_text=True)
+    assert 'value="2026-03-10"' in page and 'name="dose_dip"' in page and 'placeholder="1"' in page
+    r = client.post(f'/vaccinations/{vid}/edit', data={'date': '2026-03-12', 'product': 'hexyon', 'dose_dip': '2',
+                                                        'csrf_token': csrf()})
+    assert r.status_code == 302
+    assert query('SELECT date, product_name FROM vaccinations') == [('2026-03-12', 'Hexyon')]
+    assert query("SELECT dose_override FROM vaccination_antigens WHERE antigen = 'dip'") == [(2,)]
+    assert query("SELECT dose_override FROM vaccination_antigens WHERE antigen = 'tet'") == [(None,)]
+    r = client.post(f'/vaccinations/{vid}/edit', data={'date': '2026-03-12', 'product': 'hexyon', 'dose_dip': '0',
+                                                        'csrf_token': csrf()})
+    assert r.status_code == 400
+    # Switching to a product with other antigens replaces them
+    client.post(f'/vaccinations/{vid}/edit', data={'date': '2026-03-12', 'product': 'priorix', 'csrf_token': csrf()})
+    assert sorted(a for (a,) in query('SELECT antigen FROM vaccination_antigens')) == ['measles', 'mumps', 'rubella']
+
+
+def test_delete_vaccination(client, csrf, query, profile):
+    add_vaccination(client, csrf, profile)
+    vid = query('SELECT id FROM vaccinations')[0][0]
+    assert 'data-confirm-title="Impfung löschen?"' in client.get(f'/profiles/{profile}').get_data(as_text=True)
+    client.post(f'/vaccinations/{vid}/delete', data={'csrf_token': csrf()})
+    assert query('SELECT COUNT(*) FROM vaccinations') == [(0,)]
+    assert query('SELECT COUNT(*) FROM vaccination_antigens') == [(0,)]
+
+
+def test_forms_need_csrf(client, query, profile):
+    assert client.post(f'/profiles/{profile}/vaccinations/new',
+                       data={'date': '2026-03-10', 'product': 'hexyon'}).status_code == 400
+    assert client.post(f'/profiles/{profile}/delete').status_code == 400
+    assert query('SELECT COUNT(*) FROM profiles') == [(1,)]
+
+
+# --- Immunities ----------------------------------------------------------------------------------
+
+def test_immunity(client, csrf, query, profile):
+    r = client.post(f'/profiles/{profile}/immunities', data={'antigen': 'varicella', 'kind': 'disease',
+                                                             'date': '2026-05-01', 'note': 'Kita',
+                                                             'csrf_token': csrf()}, follow_redirects=True)
+    assert 'Immunität gegen Windpocken (Varizellen) erfasst.' in r.get_data(as_text=True)
+    page = client.get(f'/profiles/{profile}').get_data(as_text=True)
+    assert 'Krankheit durchgemacht, 01.05.2026 · Kita' in page
+    assert 'Immun (durchgemachte Krankheit oder Serologie)' in page
+    r = client.post(f'/profiles/{profile}/immunities', data={'antigen': 'varicella', 'kind': 'serology',
+                                                             'csrf_token': csrf()}, follow_redirects=True)
+    assert 'schon eine Immunität erfasst' in r.get_data(as_text=True)
+    for data in [{'antigen': 'nope', 'kind': 'disease'}, {'antigen': 'measles', 'kind': 'guess'}]:
+        r = client.post(f'/profiles/{profile}/immunities', data={**data, 'csrf_token': csrf()})
+        assert r.status_code == 400
+    client.post(f'/profiles/{profile}/immunities', data={'antigen': 'measles', 'kind': 'disease',
+                                                         'date': '2030-01-01', 'csrf_token': csrf()})
+    assert query('SELECT antigen FROM immunities') == [('varicella',)]
+    iid = query('SELECT id FROM immunities')[0][0]
+    client.post(f'/immunities/{iid}/delete', data={'csrf_token': csrf()})
+    assert query('SELECT COUNT(*) FROM immunities') == [(0,)]
+
+
+# --- Audit, escaping, views ----------------------------------------------------------------------
+
+def test_changes_are_audit_logged_without_health_details(client, csrf, query, profile):
+    add_vaccination(client, csrf, profile)
+    vid = query('SELECT id FROM vaccinations')[0][0]
+    client.post(f'/vaccinations/{vid}/edit', data={'date': '2026-03-11', 'product': 'hexyon', 'csrf_token': csrf()})
+    client.post(f'/vaccinations/{vid}/delete', data={'csrf_token': csrf()})
+    client.post(f'/profiles/{profile}/immunities', data={'antigen': 'varicella', 'kind': 'disease',
+                                                         'csrf_token': csrf()})
+    iid = query('SELECT id FROM immunities')[0][0]
+    client.post(f'/immunities/{iid}/delete', data={'csrf_token': csrf()})
+    client.post(f'/profiles/{profile}/edit', data={'display_name': 'Mia', 'birth_date': '2026-01-10',
+                                                   'csrf_token': csrf()})
+    client.post(f'/profiles/{profile}/delete', data={'csrf_token': csrf()})
+    assert query("SELECT action, detail FROM audit_log WHERE action != 'login' ORDER BY id") == [
+        ('profile_created', 'Mia'), ('vaccination_created', 'Mia'), ('vaccination_changed', 'Mia'),
+        ('vaccination_deleted', 'Mia'), ('immunity_created', 'Mia'), ('immunity_deleted', 'Mia'),
+        ('profile_changed', 'Mia'), ('profile_deleted', 'Mia')]
+    page = client.get('/admin/audit?kind=record').get_data(as_text=True)
+    assert 'Impfung erfasst' in page and 'Hexyon' not in page
+
+
+def test_user_input_is_escaped(client, csrf, login, profile):
+    client.post(f'/profiles/{profile}/edit', data={'display_name': '<b>Mia</b>', 'birth_date': '2026-01-10',
+                                                   'csrf_token': csrf()})
+    add_vaccination(client, csrf, profile, product='other', product_name='<script>x</script>', antigens=['tet'],
+                    note='"><img>')
+    for url in ['/', f'/profiles/{profile}', f'/profiles/{profile}/print']:
+        page = client.get(url).get_data(as_text=True)
+        assert '<b>Mia</b>' not in page and '&lt;b&gt;Mia&lt;/b&gt;' in page, url
+        assert '<script>x' not in page and '"><img>' not in page
+
+
+def test_dashboard_lists_what_is_due(client, csrf, login, profile):
+    add_vaccination(client, csrf, profile)
+    page = client.get('/').get_data(as_text=True)
+    assert 'Als Nächstes' in page
+    assert 'Pneumokokken' in page and 'überfällig' in page
+    assert '9 Monate · 1 Eintrag' in page
+
+
+def test_print_view(client, csrf, profile):
+    add_vaccination(client, csrf, profile, lot='A21CB')
+    page = client.get(f'/profiles/{profile}/print').get_data(as_text=True)
+    assert 'Impfausweis Mia' in page and 'A21CB' in page
+    assert 'Stand 15.10.2026' in page and 'Keine medizinische Beratung' in page
+    assert 'Abmelden' not in page and '/static/print.js' in page and '<script>' not in page
+
+
+def test_schedule_page(client, login):
+    login('bob')
+    page = client.get('/schedule').get_data(as_text=True)
+    assert 'Schweizerischer Impfplan 2026' in page and 'ch-2026 (Stand 16.04.2026)' in page
+    assert 'https://www.bag.admin.ch/de/schweizerischer-impfplan' in page
+    assert 'zu prüfen' in page and 'keine medizinische Beratung' in page
+    assert 'Ergänzende Impfung (65 Jahre und älter)' in page  # pneumococci from 65
+
+
+def test_invalid_schedule_file_stops_the_start(tmp_path):
+    bad = tmp_path / 'bad.yaml'
+    bad.write_text('schedule: {}\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='bad.yaml'):
+        create_app({'TESTING': True, 'DATABASE': str(tmp_path / 'x.db'), 'SCHEDULE_FILE': str(bad)})
+
+
+def test_catalogue_must_match_the_schedule(tmp_path):
+    from pathlib import Path
+    with pytest.raises(ValueError, match='unknown antigen'):
+        create_app({'TESTING': True, 'DATABASE': str(tmp_path / 'x.db'),
+                    'SCHEDULE_FILE': str(Path(__file__).parent / 'data' / 'test-schedule.yaml')})

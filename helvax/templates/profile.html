@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% from '_status.html' import badge, next_text, dose_label %}
+{% block title %}{{ profile['display_name'] }} – helvax{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="kicker">Geboren am {{ birth|date }}</div>
+    <h1>{{ profile['display_name'] }}</h1>
+  </div>
+  <div class="toolbar">
+    <a class="btn btn-primary" href="{{ url_for('profiles.new_vaccination', profile_id=profile['id']) }}">Impfung erfassen</a>
+    <a class="btn" href="{{ url_for('profiles.edit', profile_id=profile['id']) }}">Profil bearbeiten</a>
+    <a class="btn" href="{{ url_for('profiles.print_view', profile_id=profile['id']) }}">Drucken</a>
+  </div>
+</div>
+
+{% set action = statuses|selectattr('status', 'in', ['overdue', 'due', 'upcoming'])|list %}
+{% set done = statuses|selectattr('status', 'equalto', 'complete')|list %}
+{% set other = statuses|selectattr('status', 'equalto', 'not_recommended')|list %}
+
+<section class="card" id="status" aria-labelledby="status-h">
+  <h2 id="status-h">Impfstatus</h2>
+  <p class="hint" style="margin:0">Nach dem {{ schedule.title }} ({{ schedule.version }}). Keine medizinische Beratung: Bitte besprich die nächsten Impfungen mit deiner Ärztin oder deinem Arzt.</p>
+  {% if active_flags %}
+  <p class="hint" style="margin:0">Berücksichtigt: {{ active_flags|map(attribute='label')|join('; ') }}.</p>
+  {% endif %}
+  {% if action %}
+  <ul class="status-list">
+    {% for s in action|sort(attribute='next.recommended') %}
+    <li class="status-item status-item-{{ s.status }}">
+      <div class="status-head"><strong>{{ s.label }}</strong> {{ badge(s.status) }}</div>
+      <div>{{ dose_label(s) }}: {{ next_text(s) }}</div>
+      {% if s.needs_doctor %}<div class="doctor">{{ s.reason }}</div>{% endif %}
+      {% if s.plan|length > 1 and not s.needs_doctor %}
+      <div class="hint">Danach: {% for d in s.plan[1:] %}{{ d.label or (d.number ~ '. Dosis') }} {{ d.recommended|date }}{{ ', ' if not loop.last }}{% endfor %}</div>
+      {% endif %}
+      {% for w in s.warnings %}<div class="hint warn-text">{{ w }}</div>{% endfor %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="margin:0">Zurzeit ist keine Impfung fällig.</p>
+  {% endif %}
+
+  {% if done %}
+  <details class="status-more">
+    <summary>Vollständig ({{ done|length }})</summary>
+    <ul class="status-compact">
+      {% for s in done %}
+      <li><strong>{{ s.label }}</strong> {{ badge(s.status) }}{% if s.next %} <span class="hint">nächste Impfung {{ s.next.recommended|date }}</span>{% endif %}
+        {% for w in s.warnings %}<div class="hint warn-text">{{ w }}</div>{% endfor %}</li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+  {% if other %}
+  <details class="status-more">
+    <summary>Nicht empfohlen ({{ other|length }})</summary>
+    <ul class="status-compact">
+      {% for s in other %}
+      <li><strong>{{ s.label }}</strong> <span class="hint">{{ s.reason or '' }}{% if s.next and s.reason and 'ab' not in s.reason %} (ab {{ s.next.recommended|date }}){% endif %}</span></li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+</section>
+
+<section class="card" id="impfausweis" aria-labelledby="record-h">
+  <h2 id="record-h">Impfausweis</h2>
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="record">
+      <thead><tr><th>Datum</th><th>Impfstoff</th><th>Schützt gegen (Dosis)</th><th>Charge</th><th>Geimpft von</th><th><span class="sr-only">Aktionen</span></th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="nowrap">{{ r.date|date }}</td>
+          <td><strong>{{ r.entry['product_name'] }}</strong>{% if r.entry['note'] %}<div class="hint">{{ r.entry['note'] }}</div>{% endif %}</td>
+          <td><ul class="chips">{% for a in r.antigens %}<li title="{{ a.label }}">{{ a.label }}{% if a.number %} <span class="dose-no">{{ a.number }}</span>{% elif a.computed is none and a.override is none %} <span class="dose-no muted" title="zählt nicht">–</span>{% endif %}</li>{% endfor %}</ul></td>
+          <td>{{ r.entry['lot'] }}</td>
+          <td>{{ r.entry['administered_by'] }}</td>
+          <td class="actions">
+            <a href="{{ url_for('profiles.edit_vaccination', vaccination_id=r.entry['id']) }}">Bearbeiten</a>
+            <form method="post" action="{{ url_for('profiles.delete_vaccination', vaccination_id=r.entry['id']) }}" data-confirm-title="Impfung löschen?" data-confirm="Die Impfung vom {{ r.date|date }} ({{ r.entry['product_name'] }}) wird gelöscht." data-confirm-ok="Löschen" data-confirm-danger>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="linklike danger">Löschen</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="margin:0">Noch keine Impfungen erfasst. Nimm den Impfausweis zur Hand und erfasse die Einträge der Reihe nach.</p>
+  {% endif %}
+  <div><a class="btn" href="{{ url_for('profiles.new_vaccination', profile_id=profile['id']) }}">Impfung erfassen</a></div>
+</section>
+
+<section class="card" id="immunitaet" aria-labelledby="immunity-h">
+  <h2 id="immunity-h">Immunität ohne Impfung</h2>
+  <p class="hint" style="margin:0">Zum Beispiel durchgemachte Windpocken oder ein Antikörper-Nachweis. Die Impfung wird dann nicht mehr empfohlen.</p>
+  {% if immunities %}
+  <ul class="family-list">
+    {% for i in immunities %}
+    <li>
+      <span><strong>{{ schedule.antigens[i['antigen']].label if i['antigen'] in schedule.antigens else i['antigen'] }}</strong>
+        <span class="hint">{{ immunity_kinds[i['kind']] }}{% if i['date'] %}, {{ i['date']|isodate }}{% endif %}{% if i['note'] %} · {{ i['note'] }}{% endif %}</span></span>
+      <form method="post" action="{{ url_for('profiles.delete_immunity', immunity_id=i['id']) }}" data-confirm-title="Immunität löschen?" data-confirm="Die Immunität gegen {{ schedule.antigens[i['antigen']].label if i['antigen'] in schedule.antigens else i['antigen'] }} wird gelöscht." data-confirm-ok="Löschen" data-confirm-danger>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="linklike danger">Löschen</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form class="inline-form" method="post" action="{{ url_for('profiles.add_immunity', profile_id=profile['id']) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="imm-antigen">Gegen</label>
+      <select id="imm-antigen" name="antigen" required>
+        {% for key, a in schedule.antigens.items() %}<option value="{{ key }}">{{ a.label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="imm-kind">Nachweis</label>
+      <select id="imm-kind" name="kind">
+        {% for key, label in immunity_kinds.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="imm-date">Datum (optional)</label>
+      <input type="date" id="imm-date" name="date" max="{{ today.isoformat() }}">
+    </div>
+    <div class="field">
+      <label for="imm-note">Notiz (optional)</label>
+      <input type="text" id="imm-note" name="note" maxlength="{{ max_note }}">
+    </div>
+    <button type="submit" class="btn btn-dark">Erfassen</button>
+  </form>
+</section>
+
+<section class="card danger-zone">
+  <h2>Profil löschen</h2>
+  <form method="post" action="{{ url_for('profiles.delete', profile_id=profile['id']) }}" data-confirm-title="Profil löschen?" data-confirm="Das Profil {{ profile['display_name'] }} wird mit allen erfassten Impfungen endgültig gelöscht. Das lässt sich nicht rückgängig machen." data-confirm-ok="Endgültig löschen" data-confirm-danger>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="hint" style="margin:0 0 12px">Löscht das Profil und alle Impfungen. Drucke den Impfausweis vorher aus, wenn du ihn behalten willst.</p>
+    <button type="submit" class="btn btn-danger">Profil löschen</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% from '_status.html' import next_text, dose_label %}
+{% block title %}Impfausweis {{ profile['display_name'] }} – helvax{% endblock %}
+{% block body %}
+<main class="print-page">
+  <div class="print-actions no-print">
+    <a class="btn" href="{{ url_for('profiles.show', profile_id=profile['id']) }}">Zurück</a>
+    <button type="button" class="btn btn-primary" id="print-button">Drucken / als PDF sichern</button>
+  </div>
+  <header class="print-head">
+    <h1>Impfausweis {{ profile['display_name'] }}</h1>
+    <p>Geboren am {{ birth|date }} · Stand {{ today|date }} · {{ schedule.title }} ({{ schedule.version }})</p>
+  </header>
+
+  <h2>Impfungen</h2>
+  {% if rows %}
+  <table class="record print-record">
+    <thead><tr><th>Datum</th><th>Impfstoff</th><th>Schützt gegen (Dosis)</th><th>Charge</th><th>Geimpft von</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="nowrap">{{ r.date|date }}</td>
+        <td>{{ r.entry['product_name'] }}{% if r.entry['note'] %}<br><small>{{ r.entry['note'] }}</small>{% endif %}</td>
+        <td>{% for a in r.antigens %}{{ a.label }}{% if a.number %} ({{ a.number }}){% endif %}{{ ', ' if not loop.last }}{% endfor %}</td>
+        <td>{{ r.entry['lot'] }}</td>
+        <td>{{ r.entry['administered_by'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Keine Impfungen erfasst.</p>
+  {% endif %}
+
+  {% if immunities %}
+  <h2>Immunität ohne Impfung</h2>
+  <ul>
+    {% for i in immunities %}
+    <li>{{ schedule.antigens[i['antigen']].label if i['antigen'] in schedule.antigens else i['antigen'] }}: {{ immunity_kinds[i['kind']] }}{% if i['date'] %}, {{ i['date']|isodate }}{% endif %}{% if i['note'] %} ({{ i['note'] }}){% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% set action = statuses|selectattr('status', 'in', ['overdue', 'due', 'upcoming'])|list %}
+  <h2>Nächste Impfungen</h2>
+  {% if action %}
+  <table class="record print-record">
+    <thead><tr><th>Impfung</th><th>Status</th><th>Wann</th></tr></thead>
+    <tbody>
+      {% for s in action|sort(attribute='next.recommended') %}
+      <tr><td>{{ s.label }} – {{ dose_label(s) }}</td><td>{{ STATUS_LABELS[s.status] }}</td><td>{{ next_text(s) }}{% if s.needs_doctor %}; {{ s.reason }}{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Zurzeit ist keine Impfung fällig.</p>
+  {% endif %}
+
+  <p class="print-note">Erstellt mit helvax. Keine medizinische Beratung: Massgebend sind der Impfausweis und die Beurteilung durch eine Ärztin oder einen Arzt.</p>
+</main>
+<script src="{{ url_for('static', filename='print.js') }}" defer></script>
+{% endblock %}

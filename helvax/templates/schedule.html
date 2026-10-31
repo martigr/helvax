@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Impfplan – helvax{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="kicker">Grundlage der Berechnung</div>
+    <h1>{{ schedule.title }}</h1>
+  </div>
+</div>
+<section class="card">
+  <p style="margin:0">Herausgeber: {{ schedule.publisher }}<br>
+    Version: <strong>{{ schedule.version }}</strong>, veröffentlicht {{ schedule.published|date }}{% if schedule.revised %}, korrigiert {{ schedule.revised|date }}{% endif %}<br>
+    Quelle: <a href="{{ schedule.source_url }}" rel="noopener noreferrer">{{ schedule.source_url }}</a></p>
+  {% if schedule.placeholder %}<p class="flash flash-warn" style="margin:0">Dies sind Platzhalter-Regeln, keine echten Impfempfehlungen.</p>{% endif %}
+  <p class="hint" style="margin:0">helvax rechnet die Empfehlungen des Impfplans mit festen Regeln nach. Das ist eine Lesehilfe, keine medizinische Beratung. Regeln, bei denen die Übertragung eine Auslegung brauchte, sind mit «zu prüfen» markiert. Bitte besprich deine Impfungen immer mit deiner Ärztin oder deinem Arzt.</p>
+</section>
+<section class="card">
+  <h2>Regeln</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Impfung</th><th>Kategorie</th><th>Hinweise</th><th>Quelle im Impfplan</th></tr></thead>
+      <tbody>
+        {% for r in rules %}
+        <tr>
+          <td><strong>{{ schedule.antigens[r.antigen].label }}</strong>{% if r.review %} <span class="badge warn">zu prüfen</span>{% endif %}</td>
+          <td>{{ categories[r.category] }}{% for c in r.courses if c.category and c.category != r.category %}, {{ categories[c.category] }} ({{ c.ages.start.label() }} und älter){% endfor %}</td>
+          <td>{{ r.note }}{% if r.requires_flag %} Nur bei: {{ schedule.flags[r.requires_flag].label }}.{% endif %}</td>
+          <td class="hint">{{ r.ref }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
