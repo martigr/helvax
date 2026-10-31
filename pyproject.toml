@@ -1,0 +1,18 @@
+[project]
+name = "helvax"
+version = "0.1.0"
+description = "Digital vaccination records of a family, with the Swiss vaccination schedule"
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

@@ -1,0 +1,25 @@
+{% extends 'auth_base.html' %}
+{% block title %}Anmelden – helvax{% endblock %}
+{% block form %}
+<form class="login-form" method="post" style="max-width:none">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div>
+    <h2>Anmelden</h2>
+    <p class="hint" style="margin:6px 0 0;font-size:15px">Mit deinem Benutzerkonto.</p>
+  </div>
+  {% if error %}<div class="flash flash-warn" role="alert">{{ error }}</div>{% endif %}
+  <div class="field">
+    <label for="username">Benutzername</label>
+    <input type="text" id="username" name="username" value="{{ username or '' }}" autocomplete="username" autocapitalize="none" required autofocus>
+  </div>
+  <div class="field">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+      <label for="password">Passwort</label>
+      {% if mail_enabled %}<a href="{{ url_for('auth.forgot_password') }}" style="font-size:13px;font-weight:600">Passwort vergessen?</a>{% endif %}
+    </div>
+    <input type="password" id="password" name="password" autocomplete="current-password" required>
+  </div>
+  <label class="check"><input type="checkbox" name="remember" value="1" checked>Angemeldet bleiben</label>
+  <button type="submit" class="btn btn-primary" style="min-height:50px;font-size:16px">Anmelden</button>
+</form>
+{% endblock %}

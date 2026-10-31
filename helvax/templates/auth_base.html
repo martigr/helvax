@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="login">
+  <section class="login-hero">
+    <div class="brand" style="color:#fff">
+      <span class="brand-mark">{% include '_logo.html' %}</span>
+      <span class="brand-name">helvax</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <h1>Der Impfausweis<br>der ganzen Familie.</h1>
+      <p class="hero-extra">Alle Impfungen an einem Ort, abgeglichen mit dem Schweizerischen Impfplan, und eine Erinnerung, wenn die nächste fällig wird.</p>
+    </div>
+    <div class="hero-extra" style="font-size:13px;color:#9AA6B2">Noch kein Konto? Der Admin dieser Installation legt es für dich an.</div>
+  </section>
+  <section class="login-main">
+    <div class="login-form">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+      {% endfor %}
+      {% endwith %}
+      {% block form %}{% endblock %}
+      {# Logged-out pages: privacy link only, no version #}
+      <footer class="login-footer"><a href="{{ url_for('privacy') }}">Datenschutz</a></footer>
+    </div>
+  </section>
+</div>
+{% endblock %}
