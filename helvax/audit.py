@@ -23,6 +23,7 @@ ACTIONS = {
     'vaccination_created': ('Impfung erfasst', 'record'),
     'vaccination_changed': ('Impfung geändert', 'record'),
     'vaccination_deleted': ('Impfung gelöscht', 'record'),
+    'vaccinations_imported': ('Impfungen importiert', 'record'),
     'immunity_created': ('Immunität erfasst', 'record'),
     'immunity_deleted': ('Immunität gelöscht', 'record'),
     'display_name': ('Anzeigename geändert', 'settings'),

@@ -46,6 +46,7 @@ helvax/
 ├── accesslog.py          # Gunicorn logger class that blanks tokens in the access log
 ├── pwa.py                # bp "pwa": service worker /sw.js, offline page /offline
 ├── cli.py, demo.py       # flask commands; fictional demo data for seed-demo
+├── importer.py           # CSV import of vaccination entries (parse() checks, save() inserts)
 ├── static/               # style.css, *.js, manifest, icons
 └── templates/            # base.html, _status.html (badges), dashboard, profile, profile_form,
                           # vaccination_form, profile_print, _record_matrix (booklet table), schedule,
@@ -164,8 +165,22 @@ id, user_id → users CASCADE, endpoint UNIQUE, p256dh, auth, created_at
   derived from user input; size limit (e.g. 5 MB, `MAX_CONTENT_LENGTH` raised only for that route); only
   JPEG/PNG/PDF by content sniffing; served through a family-checked route with `Content-Disposition:
   attachment` and `no-store`; included in backups (backup command then archives the folder too).
-- **Import (CSV, maybe OCR):** parse into the same dict `profiles.parse_vaccination_form()` returns and insert
-  with `profiles.create_entry()`, in one transaction per file, with a preview step before saving.
+- **Import (CSV) in the web interface, maybe OCR:** reuse `importer.parse()` (built for the command line, see
+  below) for an upload form with a preview step before saving.
+
+### CSV import (command line)
+
+`flask import-vaccinations <username> <profile> <file>` (`cli.py`, logic in `importer.py`). The profile is
+looked up by id or name only within the user's family (same rule as `get_family_profile()`). `importer.parse()`
+turns every row into the fields of the vaccination form (`MultiDict`) and checks it with
+`profiles.parse_vaccination_form()`, so an import accepts exactly what the form accepts; it also rejects
+unknown columns, products and antigens, and `doses` for antigens the vaccine doesn't cover. It returns
+`(entries, errors, skipped)`: rows with the same date and product name as an existing entry (or an earlier
+row) are skipped. Any error: nothing is saved. Otherwise the command prints the entries, asks (unless
+`--yes`; `--dry-run` stops before), inserts them with `profiles.create_entry()` in one transaction and writes
+one audit entry `vaccinations_imported` (`<profile>: <count>`, user `Kommandozeile (<username>)`). The output
+on the terminal names vaccines (the user asked for it); nothing about them goes into logs or the audit log.
+`flask list-products [search] [--antigens]` prints the catalogue keys and antigen keys for the file.
 
 ## Schedule file
 

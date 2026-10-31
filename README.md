@@ -51,7 +51,10 @@ All screenshots show the fictional demo family of `flask seed-demo`.
   profile ("Bei Mia ist eine Impfung fällig") and link to it, never the vaccine or the disease.
 - Home screen app (PWA) with an offline page; pages are never cached.
 
-Planned: photos of the paper booklet, import.
+- **Import** of a vaccination record from a CSV file on the command line (`import-vaccinations`), checked like
+  the form, with a preview.
+
+Planned: photos of the paper booklet, import in the web interface.
 
 ## Quick start (development)
 
@@ -265,7 +268,35 @@ flask --app helvax seed-demo                       # fictional demo family, deve
 flask --app helvax send-notifications [--loop N]   # queue due reminders, send queued mails and push messages
 flask --app helvax gen-vapid-key                   # key for push messages (line for .env)
 flask --app helvax backup <file>                   # consistent copy of the database
+flask --app helvax list-products [<search>]        # vaccine catalogue: keys, names, antigens
+flask --app helvax list-products --antigens        # antigen keys (for vaccines not in the catalogue)
+flask --app helvax import-vaccinations <username> <profile> <file.csv> [--dry-run] [--yes]
 ```
+
+### Importing vaccinations (CSV)
+
+`import-vaccinations` adds the vaccinations of a CSV file to a profile (name or number) of the user's family.
+It checks every row like the web form, prints what it would save and asks before saving; with an error in
+any row nothing is saved. Rows with the same date and vaccine as an existing entry are skipped, so a file can
+be imported again after adding rows. One header row with these columns (`;` or `,` as separator, UTF-8 or
+Windows-1252, as Excel saves it):
+
+| Column | Content |
+|---|---|
+| `date` (required) | `01.03.2015` or `2015-03-01` |
+| `product` (required) | key from `list-products`, or `other` |
+| `product_name`, `antigens` | only with `other`: name, and antigen keys from `list-products --antigens` (`dip tet polio`) |
+| `doses` | optional dose numbers that differ from the count, e.g. `pert=4 polio=3` |
+| `lot`, `administered_by`, `note` | optional |
+
+```csv
+date;product;product_name;antigens;doses;lot;administered_by;note
+10.05.2020;infanrix-hexa;;;;A12B;Praxis Beispiel;
+01.03.2022;other;Impfstoff aus dem Ausland;dip tet polio;;;;
+```
+
+In Docker, copy the file into the container first (`docker compose cp file.csv web:/data/import.csv`), run
+the command with `--user 1000:1000` and delete the file afterwards: it contains health data.
 
 ## The vaccination rules
 
