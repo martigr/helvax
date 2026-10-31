@@ -222,7 +222,7 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 | `/` | GET | user | Family dashboard: what is due next, profiles with their most urgent status |
 | `/schedule` | GET | user | Schedule version, source, rules with category, notes, page references |
 | `/profiles/new` | GET/POST | user with family (403 without) | `display_name` (1–40), `birth_date` (not in the future), `flags` (repeated; 400 for unknown) |
-| `/profiles/<id>` | GET | family | Status overview and vaccination record; `?ansicht=liste` (default) or `tabelle` (matrix like the paper booklet: a row per entry, a column per antigen of the record, dose numbers in the cells; `profiles.record_matrix()`); 400 for other values |
+| `/profiles/<id>` | GET | family | Status overview and vaccination record; `?ansicht=liste` (default) or `tabelle` (matrix like the paper booklet: a row per entry, a column per antigen that occurs in the record or is needed now (overdue, due, upcoming), dose numbers in the cells, a status row at the bottom, so a vaccination never given shows as an empty column with its status; `profiles.record_matrix()`); 400 for other values |
 | `/profiles/<id>/edit` | GET/POST | family | Same fields; the birth date can't move after the first vaccination |
 | `/profiles/<id>/delete` | POST | family | Deletes entries, flags, immunities |
 | `/profiles/<id>/print` | GET | family | Print view (print CSS; "Save as PDF" in the browser); same `?ansicht=` |

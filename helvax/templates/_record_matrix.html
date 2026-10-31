@@ -24,8 +24,25 @@
         {% endfor %}
       </tr>
       {% endfor %}
+      {% if not matrix.rows %}
+      <tr><td colspan="{{ matrix.columns|length + 2 }}" class="hint">Noch keine Impfungen erfasst.</td></tr>
+      {% endif %}
     </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="2" scope="row">Status</th>
+        {% for c in matrix.columns %}
+        {% set s = c.status %}
+        <td class="matrix-status{% if s %} status-{{ s.status }}{% endif %}"{% if s %} title="{{ c.label }}: {{ STATUS_LABELS[s.status] }}{% if s.next and s.status != 'complete' %}, empfohlen {{ s.next.recommended|date }}{% endif %}"{% endif %}>
+          {%- if s %}<span aria-hidden="true">{{ MATRIX_MARKS[s.status] }}</span><span class="sr-only">{{ c.label }}: {{ STATUS_LABELS[s.status] }}</span>{% endif -%}
+        </td>
+        {% endfor %}
+      </tr>
+    </tfoot>
   </table>
 </div>
-<p class="hint" style="margin:0">Zahl = Dosis gegen diese Krankheit; × = gegeben, zählt aber nicht (z. B. zu früh).</p>
+<p class="hint" style="margin:0">Zahl = Dosis gegen diese Krankheit; × = gegeben, zählt aber nicht (z. B. zu früh).
+  Status: <span class="matrix-key status-overdue">!</span> überfällig, <span class="matrix-key status-due">●</span> fällig,
+  <span class="matrix-key status-upcoming">○</span> demnächst, <span class="matrix-key status-complete">✓</span> vollständig,
+  – nicht empfohlen. Eine leere Spalte mit Status heisst: noch keine Dosis erfasst.</p>
 {%- endmacro %}

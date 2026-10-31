@@ -68,7 +68,7 @@
 <section class="card" id="impfausweis" aria-labelledby="record-h">
   <div class="record-head">
     <h2 id="record-h">Impfausweis</h2>
-    {% if rows %}
+    {% if rows or matrix.columns %}
     <nav class="segmented" aria-label="Ansicht des Impfausweises">
       {% for key, label in views.items() %}
       <a href="{{ url_for('profiles.show', profile_id=profile['id'], ansicht=key) }}#impfausweis"{% if key == view %} class="active" aria-current="page"{% endif %}>{{ label }}</a>
@@ -76,7 +76,7 @@
     </nav>
     {% endif %}
   </div>
-  {% if rows and view == 'tabelle' %}
+  {% if view == 'tabelle' and matrix.columns %}
   {{ record_matrix(matrix, edit=true) }}
   {% elif rows %}
   <div class="table-wrap">

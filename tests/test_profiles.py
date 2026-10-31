@@ -314,15 +314,20 @@ def test_record_as_matrix(client, csrf, profile):
     page = client.get(f'/profiles/{profile}?ansicht=tabelle').get_data(as_text=True)
     assert 'class="record matrix"' in page and 'aria-current="page">Tabelle</a>' in page
     head = page.split('<thead>')[1].split('</thead>')[0]
-    # Columns in schedule order, only antigens that occur in the record
-    columns = [part.split('</span>')[0] for part in head.split('<span title="')[1:]]
-    assert [c.split('">')[1] for c in columns] == [
-        'Diphtherie', 'Tetanus', 'Pertussis (Keuchhusten)', 'Kinderlähmung (Polio)',
-        'Haemophilus influenzae Typ b', 'Hepatitis B', 'Pneumokokken']
+    columns = [part.split('</span>')[0].split('">')[1] for part in head.split('<span title="')[1:]]
+    # Schedule order: what occurs in the record, plus what is needed now even without any dose yet
+    # (Mia, 9 months: MMRV due, RSV due, MenB opted in); nothing that isn't recommended (e.g. HPV)
+    assert columns == ['Diphtherie', 'Tetanus', 'Pertussis (Keuchhusten)', 'Kinderlähmung (Polio)',
+                       'Haemophilus influenzae Typ b', 'Hepatitis B', 'Pneumokokken', 'Meningokokken B',
+                       'Masern', 'Mumps', 'Röteln', 'Windpocken (Varizellen)', 'RSV (Antikörper für Säuglinge)']
+    foot = page.split('<tfoot>')[1].split('</tfoot>')[0]
+    assert 'class="matrix-status status-due" title="Masern: fällig, empfohlen 10.10.2026"' in foot
+    assert 'class="matrix-status status-upcoming" title="Diphtherie: demnächst, empfohlen 10.01.2027"' in foot
     body = page.split('<tbody>')[1].split('</tbody>')[0]
     rows = body.split('<tr>')[1:]
     assert len(rows) == 3 and 'A21CB' in rows[0]
     assert rows[1].count('class="matrix-cell on"') == 6 and rows[1].count('>2<span class="sr-only">') == 6
+    assert rows[1].count('class="matrix-cell"></td>') == 7  # pneumococci, MenB, MMRV and RSV not in this vaccine
     assert rows[2].count('class="matrix-cell on"') == 1 and '>1<span class="sr-only"> Pneumokokken' in rows[2]
     assert '/print?ansicht=tabelle' in page
     printed = client.get(f'/profiles/{profile}/print?ansicht=tabelle').get_data(as_text=True)
@@ -330,3 +335,9 @@ def test_record_as_matrix(client, csrf, profile):
     # Default is the list
     assert 'class="record matrix"' not in client.get(f'/profiles/{profile}').get_data(as_text=True)
     assert client.get(f'/profiles/{profile}?ansicht=nope').status_code == 400
+
+
+def test_matrix_without_entries_shows_what_is_needed(client, csrf, profile):
+    page = client.get(f'/profiles/{profile}?ansicht=tabelle').get_data(as_text=True)
+    assert 'class="record matrix"' in page and 'Noch keine Impfungen erfasst.' in page
+    assert 'title="Diphtherie: überfällig' in page

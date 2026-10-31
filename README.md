@@ -33,7 +33,8 @@ All screenshots show the fictional demo family of `flask seed-demo`.
   HPV 20–26, from 65: pneumococci, shingles, influenza, Covid-19) are opt-in per profile; FSME (tick-borne
   encephalitis) is computed for people in a risk area.
 - **Two views of the record:** a list, or a table like the paper booklet (a row per vaccine, a column per
-  disease, the dose number in the cell), on screen and in print.
+  disease, the dose number in the cell, a status row below), on screen and in print. Vaccinations that are
+  needed but were never given appear as empty columns.
 - **Immunity without vaccination** (e.g. chickenpox in the history, serology) per antigen.
 - **Family dashboard:** what is due next across all profiles.
 - **Print view** per profile (browser "Save as PDF", no PDF library).

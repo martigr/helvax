@@ -188,10 +188,14 @@ td.actions a { font-weight: 600; margin-left: 12px; }
 .matrix th.matrix-antigen { vertical-align: bottom; padding: 8px 4px; width: 34px; }
 .matrix th.matrix-antigen span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 12px; letter-spacing: 0; text-transform: none; color: var(--ink-2); }
 .matrix th.matrix-date, .matrix th.matrix-product { vertical-align: bottom; }
+.matrix th.matrix-date { width: 1%; white-space: nowrap; }  /* as narrow as the dates; the rest goes to the vaccine */
 .matrix td.matrix-cell { text-align: center; vertical-align: middle; padding: 6px 4px; font-weight: 800; }
 .matrix tr > :first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
 .matrix td.matrix-cell.on { background: var(--accent-soft); color: var(--accent-ink); }
 .matrix tbody tr:nth-child(even) td:not(.on) { background: var(--subtle); }
+.matrix tfoot th { text-align: left; vertical-align: middle; }
+.matrix td.matrix-status { text-align: center; vertical-align: middle; font-weight: 800; padding: 6px 2px; }
+.matrix-key { display: inline-block; min-width: 18px; text-align: center; border-radius: 6px; font-weight: 800; }
 @media print { .matrix tr > :first-child { position: static; } }
 
 /* --- Print view (browser "Save as PDF") --------------------------------- */

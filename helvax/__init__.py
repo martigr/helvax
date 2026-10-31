@@ -100,6 +100,9 @@ def create_app(test_config=None):
     app.jinja_env.filters['date'] = dates.fmt_date
     app.jinja_env.filters['isodate'] = lambda value: dates.fmt_date(dates.parse_day(value))
     app.jinja_env.globals['STATUS_LABELS'] = engine.STATUS_LABELS
+    # Short marks for the status row of the booklet table
+    app.jinja_env.globals['MATRIX_MARKS'] = {'overdue': '!', 'due': '●', 'upcoming': '○', 'complete': '✓',
+                                             'not_recommended': '–'}
     app.jinja_env.globals['CATEGORIES'] = schedule.CATEGORIES
 
     @app.context_processor

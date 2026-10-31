@@ -14,7 +14,7 @@
   </header>
 
   <h2>Impfungen</h2>
-  {% if rows and view == 'tabelle' %}
+  {% if view == 'tabelle' and matrix.columns %}
   {{ record_matrix(matrix) }}
   {% elif rows %}
   <table class="record print-record">
