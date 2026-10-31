@@ -39,8 +39,12 @@ def create_app(test_config=None):
         SMTP_PASSWORD=os.environ.get('SMTP_PASSWORD'),
         MAIL_FROM=os.environ.get('MAIL_FROM'),
         MAIL_FROM_NAME=os.environ.get('MAIL_FROM_NAME', 'helvax'),
-        # Public address of the app, used for links in mails
+        # Public address of the app, used for links in mails and push messages
         BASE_URL=os.environ.get('BASE_URL', 'http://localhost:5000'),
+        # Push messages: key from `flask gen-vapid-key`; push is off while it is empty.
+        # The subject is a contact for the push services (default: mailto:MAIL_FROM, else BASE_URL).
+        VAPID_PRIVATE_KEY=os.environ.get('VAPID_PRIVATE_KEY'),
+        VAPID_SUBJECT=os.environ.get('VAPID_SUBJECT'),
         # The vaccination schedule (rules) file; default: the newest one shipped in helvax/schedules/
         SCHEDULE_FILE=os.environ.get('SCHEDULE_FILE') or os.path.join(os.path.dirname(__file__), 'schedules',
                                                                        'ch-2026.yaml'),
@@ -76,6 +80,7 @@ def create_app(test_config=None):
         mail,
         privacy,
         profiles,
+        push,
         pwa,
         rules,
         schedule,
@@ -83,6 +88,8 @@ def create_app(test_config=None):
     )
 
     rules.init_app(app)
+    with app.app_context():
+        push.check_config()
     db.ensure_writable(app.config['DATABASE'])
 
     db.init_app(app)
@@ -107,7 +114,8 @@ def create_app(test_config=None):
 
     @app.context_processor
     def template_globals():
-        return {'mail_enabled': mail.is_configured(), 'app_version': __version__, 'schedule': rules.schedule()}
+        return {'mail_enabled': mail.is_configured(), 'push_enabled': push.is_configured(),
+                'app_version': __version__, 'schedule': rules.schedule()}
 
     @app.route('/health')
     def health():

@@ -59,6 +59,12 @@
       <li><strong>Impfungen:</strong> Datum, Impfstoff, Charge, wer geimpft hat, Notiz; durchgemachte Krankheiten
         oder Serologien, falls erfasst.</li>
       <li><strong>E-Mail (freiwillig):</strong> Adresse und Bestätigungsstatus.</li>
+      <li><strong>Erinnerungen:</strong> deine Einstellungen (wie, wann, für welche Profile) und welche Erinnerungen
+        du schon bekommen hast, damit keine doppelt kommt.</li>
+      {% if push_enabled %}
+      <li><strong>Push-Mitteilungen (freiwillig):</strong> für jedes Gerät, auf dem du Push aktivierst, die Adresse beim
+        Push-Dienst deines Browsers und die Schlüssel zum Verschlüsseln der Mitteilungen.</li>
+      {% endif %}
       <li><strong>Audit-Log:</strong> Anmeldungen und Änderungen (z.&nbsp;B. «Impfung erfasst» bei welchem Profil),
         mit Zeitpunkt und IP-Adresse, ohne Impfstoff oder Diagnose.</li>
       <li><strong>Server-Protokoll:</strong> Anmeldungen und fehlgeschlagene Anmeldeversuche mit Benutzername und
@@ -73,9 +79,14 @@
         Mitglied kann sie bearbeiten.</li>
       <li>Admins legen Konten und Familien an und sehen die Benutzerliste mit E-Mail-Adressen und das Audit-Log.
         Impfdaten sehen sie nur, wenn sie selbst Mitglied der Familie sind.</li>
-      <li>Mails enthalten nie Angaben zu Impfungen, nur einen Link in die App.</li>
+      <li>Mails{{ ' und Push-Mitteilungen' if push_enabled }} enthalten nie Angaben zu Impfungen: Erinnerungen nennen
+        nur den Namen des Profils («Bei Mia ist eine Impfung fällig») und einen Link in die App.</li>
       <li>Die App läuft auf einem Server, den der Betreiber selbst betreibt. Mails werden über einen
         Mail-Anbieter verschickt, der sie nur im Auftrag bearbeitet.</li>
+      {% if push_enabled %}
+      <li>Push-Mitteilungen laufen über den Push-Dienst deines Browsers (z.&nbsp;B. Google, Apple, Mozilla, Microsoft).
+        Sie sind verschlüsselt; der Dienst sieht nur, wann eine Mitteilung an dein Gerät geht.</li>
+      {% endif %}
     </ul>
   </section>
 
@@ -85,7 +96,11 @@
       <li>Profile und Impfungen: bis ein Mitglied der Familie sie löscht.</li>
       <li>Konto: bis ein Admin es löscht. Die Profile der Familie bleiben dabei erhalten.</li>
       <li>Audit-Log: {{ audit_days }} Tage, danach automatisch gelöscht.</li>
-      <li>Verschickte Mails: {{ keep_mail_days }} Tage.</li>
+      <li>Verschickte Mails{{ ' und Push-Mitteilungen' if push_enabled }}: {{ keep_mail_days }} Tage.</li>
+      <li>Welche Erinnerungen verschickt wurden (ohne Text, nur damit keine doppelt kommt): {{ keep_reminder_years }} Jahre.</li>
+      {% if push_enabled %}
+      <li>Push-Geräte: bis du Push auf dem Gerät deaktivierst, der Browser es aufhebt oder ein Admin das Konto löscht.</li>
+      {% endif %}
       <li>Fehlgeschlagene Anmeldeversuche (Schutz vor Passwort-Raten): 15 Minuten.</li>
       <li>Server-Protokoll und Sicherungen: je nach Einstellung des Betreibers.</li>
     </ul>

@@ -53,6 +53,62 @@
 
   <form class="card" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="reminders">
+    <h2>Erinnerungen</h2>
+    <p class="hint" style="margin:0">helvax erinnert dich, wenn bei einem Profil eine Impfung fällig wird. Mails und
+      Push-Mitteilungen nennen nur den Namen, nie die Impfung; was fällig ist, siehst du nach dem Klick in der App.</p>
+    {% if not mail_enabled and not push_enabled %}<p class="hint" style="margin:0">Weder Mail noch Push sind eingerichtet. Die Einstellungen werden gespeichert und gelten, sobald der Betreiber es einrichtet.</p>{% endif %}
+    <fieldset class="field">
+      <legend class="field-label">Wie</legend>
+      <div class="channels">
+        <label class="check"><input type="checkbox" name="remind_mail" value="1"{{ ' checked' if g.user['remind_mail'] }}>per Mail</label>
+        {% if push_enabled %}<label class="check"><input type="checkbox" name="remind_push" value="1"{{ ' checked' if g.user['remind_push'] }}>per Push</label>{% endif %}
+      </div>
+      {% if g.user['remind_mail'] and not (g.user['email'] and g.user['email_verified']) %}<span class="hint">Mails gehen nur an eine bestätigte Adresse (oben).</span>{% endif %}
+    </fieldset>
+    {% if push_enabled %}
+    <div class="field" id="push-device" data-key="{{ push_key }}" data-endpoints='{{ push_endpoints|tojson }}'
+         data-subscribe="{{ url_for('account.push_subscribe') }}" data-unsubscribe="{{ url_for('account.push_unsubscribe') }}">
+      <span class="field-label">Push-Mitteilungen auf diesem Gerät</span>
+      <div class="push-row">
+        <button type="button" class="btn" id="push-toggle" hidden>Push aktivieren</button>
+        <span class="hint" id="push-status" aria-live="polite"></span>
+      </div>
+      <span class="hint">Gilt nur für dieses Gerät (Handy, Computer). Auf dem iPhone geht Push nur, wenn du helvax zum Home-Bildschirm hinzugefügt hast und es von dort öffnest.</span>
+    </div>
+    {% endif %}
+    <fieldset class="field">
+      <legend class="field-label">Wann, vor dem empfohlenen Datum</legend>
+      <div class="channels">
+        {% for days, label in lead_choices %}
+        <label class="check"><input type="checkbox" name="leads" value="{{ days }}"{{ ' checked' if days in leads }}>{{ label }}</label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <div class="field">
+      <label for="overdue_days">Wenn eine Impfung überfällig ist, nochmals erinnern</label>
+      <select id="overdue_days" name="overdue_days">
+        {% for days, label in overdue_choices %}
+        <option value="{{ days }}"{{ ' selected' if g.user['remind_overdue_days'] == days }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if profiles %}
+    <fieldset class="field">
+      <legend class="field-label">Für diese Profile</legend>
+      <div class="channels">
+        {% for p in profiles %}
+        <label class="check"><input type="checkbox" name="watch" value="{{ p['id'] }}"{{ ' checked' if p['id'] in watched }}>{{ p['display_name'] }}</label>
+        {% endfor %}
+      </div>
+      <span class="hint">Neue Profile der Familie kommen automatisch dazu.</span>
+    </fieldset>
+    {% endif %}
+    <div><button type="submit" class="btn btn-dark">Speichern</button></div>
+  </form>
+
+  <form class="card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="action" value="password">
     <h2>Passwort ändern</h2>
     <div class="field">
@@ -78,4 +134,5 @@
   </form>
 </div>
 <script src="{{ url_for('static', filename='account.js') }}" defer></script>
+{% if push_enabled %}<script src="{{ url_for('static', filename='push.js') }}" defer></script>{% endif %}
 {% endblock %}

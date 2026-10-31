@@ -56,6 +56,25 @@ def family_profiles():
                             (g.user['family_id'],)).fetchall()
 
 
+# --- Reminders: which accounts watch which profiles ------------------------------------------------
+
+def create_profile(con, family_id, name, birth):
+    """Insert a profile; every account of the family gets reminders for it (until it unticks it)."""
+    pid = con.execute('INSERT INTO profiles (family_id, display_name, birth_date, created_at) VALUES (?, ?, ?, ?)',
+                      (family_id, name, birth.isoformat(), dates.now().isoformat(timespec='seconds'))).lastrowid
+    con.execute('INSERT OR IGNORE INTO profile_watches (user_id, profile_id) '
+                'SELECT id, ? FROM users WHERE family_id = ?', (pid, family_id))
+    return pid
+
+
+def watch_family(con, user_id, family_id):
+    """The account moved to another family (or none): it watches all of that family's profiles, no others."""
+    con.execute('DELETE FROM profile_watches WHERE user_id = ?', (user_id,))
+    if family_id is not None:
+        con.execute('INSERT INTO profile_watches (user_id, profile_id) SELECT ?, id FROM profiles WHERE family_id = ?',
+                    (user_id, family_id))
+
+
 # --- Reading a record and evaluating it ------------------------------------------------------------
 
 def profile_flags(profile_id):
@@ -197,9 +216,7 @@ def new():
             return render_template('profile_form.html', profile=None, form=request.form,
                                    flags=set(request.form.getlist('flags')), flag_groups=flag_groups()), 400
         with get_db() as con:
-            pid = con.execute('INSERT INTO profiles (family_id, display_name, birth_date, created_at) '
-                              'VALUES (?, ?, ?, ?)', (fid, name, birth.isoformat(),
-                                                      dates.now().isoformat(timespec='seconds'))).lastrowid
+            pid = create_profile(con, fid, name, birth)
             save_flags(con, pid, flags)
             audit.record(con, 'profile_created', name)
         flash(f'Profil «{name}» angelegt. Erfasse jetzt die Impfungen aus dem Impfausweis.', 'ok')

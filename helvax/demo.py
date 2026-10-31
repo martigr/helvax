@@ -9,7 +9,7 @@ from datetime import timedelta
 from . import audit, dates
 from .dates import add_months
 from .db import get_db
-from .profiles import create_entry, save_flags
+from .profiles import create_entry, create_profile, save_flags, watch_family
 from .users import create_user, get_user_by_username
 
 FAMILY = 'Familie Muster'
@@ -87,15 +87,16 @@ def seed():
             create_user(username, password, name, is_admin)
             with get_db() as con:
                 audit.record(con, 'user_created', username, username='Kommandozeile')
-        with get_db() as con:
-            con.execute('UPDATE users SET family_id = ? WHERE username = ?', (family_id, username))
+        user = get_user_by_username(username)
+        if user['family_id'] != family_id:
+            with get_db() as con:
+                con.execute('UPDATE users SET family_id = ? WHERE id = ?', (family_id, user['id']))
+                watch_family(con, user['id'], family_id)
     with get_db() as con:
         if con.execute('SELECT 1 FROM profiles WHERE family_id = ?', (family_id,)).fetchone():
             return family_id
         for name, birth, flags, entries in _profiles(today):
-            pid = con.execute('INSERT INTO profiles (family_id, display_name, birth_date, created_at) '
-                              'VALUES (?, ?, ?, ?)', (family_id, name, birth.isoformat(),
-                                                      dates.now().isoformat(timespec='seconds'))).lastrowid
+            pid = create_profile(con, family_id, name, birth)
             save_flags(con, pid, flags)
             for i, (day, (key, product_name, antigens), note) in enumerate(entries):
                 if day > today:

@@ -13,6 +13,7 @@ from . import audit
 from .auth import admin_required, keep_session
 from .db import get_db, get_setting, set_setting
 from .notifications import queue_email_verification
+from .profiles import watch_family
 from .users import MAX_NAME_LENGTH, MIN_PASSWORD_LENGTH, UserError, create_user, get_user, set_password
 
 bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -102,6 +103,8 @@ def set_family(uid):
         family = None
     with get_db() as con:
         con.execute('UPDATE users SET family_id = ? WHERE id = ?', (family and family['id'], uid))
+        if (family and family['id']) != user['family_id']:
+            watch_family(con, uid, family and family['id'])
         audit.record(con, 'family_assigned', f'{user["username"]} → {family["name"] if family else "keine"}')
     flash(f'{user["display_name"]} gehört jetzt zur Familie «{family["name"]}».' if family
           else f'{user["display_name"]} gehört keiner Familie mehr an.', 'ok')

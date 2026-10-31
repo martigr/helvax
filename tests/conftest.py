@@ -1,15 +1,19 @@
+import json
 import secrets
 from datetime import datetime
 
 import pytest
 
-from helvax import create_app, dates, mail
+from helvax import create_app, dates, mail, push
 from helvax.db import get_db
 from helvax.users import create_user
 
 # Fixed clock for all tests
 NOW = datetime(2026, 10, 15, 14, 20)
 PASSWORD = 'secret1234'
+
+VAPID_KEY = push.new_private_key()
+REAL_PUSH_DELIVER = push.deliver  # captured before the pushbox fixture replaces it
 
 MAIL_CONFIG = {'SMTP_HOST': 'smtp.test', 'MAIL_FROM': 'helvax@example.ch', 'BASE_URL': 'https://hx.test'}
 
@@ -19,6 +23,16 @@ def mailbox(monkeypatch):
     """Mails 'sent' during the test as (to, subject, body); nothing reaches a real server."""
     sent = []
     monkeypatch.setattr(mail, 'deliver', lambda to, subject, body: sent.append((to, subject, body)))
+    return sent
+
+
+@pytest.fixture
+def pushbox(app, monkeypatch):
+    """Switches push on; push messages 'sent' during the test as (endpoint, payload dict, ttl)."""
+    app.config['VAPID_PRIVATE_KEY'] = VAPID_KEY
+    sent = []
+    monkeypatch.setattr(push, 'deliver',
+                        lambda sub, payload, ttl: sent.append((sub['endpoint'], json.loads(payload), ttl)))
     return sent
 
 

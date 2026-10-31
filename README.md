@@ -46,9 +46,12 @@ All screenshots show the fictional demo family of `flask seed-demo`.
 - **Data-driven rules:** the schedule is a versioned YAML file
   ([`helvax/schedules/ch-2026.yaml`](helvax/schedules/ch-2026.yaml)) with page references; its version and
   source are shown in the app. Changing the file changes the results, without code changes.
+- **Reminders** by mail and Web Push: per account, chosen lead times before the recommended date (default 8
+  weeks and 1 week), repeats while a vaccination is overdue, and which profiles to watch. They only name the
+  profile ("Bei Mia ist eine Impfung fällig") and link to it, never the vaccine or the disease.
 - Home screen app (PWA) with an offline page; pages are never cached.
 
-Planned: reminders by mail and Web Push, photos of the paper booklet, import.
+Planned: photos of the paper booklet, import.
 
 ## Quick start (development)
 
@@ -72,8 +75,22 @@ The app listens on `127.0.0.1:5050` only; put an HTTPS reverse proxy in front of
 Two containers share the image and the `/data` volume:
 
 - `web`: the app (Gunicorn) on port 5000 inside the container, published as `127.0.0.1:5050`
-- `notifier`: `flask --app helvax send-notifications --loop 60`, which sends queued mails (password reset,
-  address confirmation; reminders later) once a minute. Without mail settings it idles.
+- `notifier`: `flask --app helvax send-notifications --loop 60`, which once a minute checks every watched profile
+  for due vaccinations, queues reminders and sends queued mails and push messages (also password reset and
+  address confirmation). Without mail and push settings it idles.
+
+### Push messages (optional)
+
+Create a key once and put the line into `.env`:
+
+```bash
+docker compose run --rm web flask --app helvax gen-vapid-key   # prints VAPID_PRIVATE_KEY=...
+```
+
+Keep it: a new key ends all push subscriptions. Push needs HTTPS (browsers refuse it on plain HTTP). Each
+member then opens *Konto → Erinnerungen* on each device and taps *Push aktivieren*; on an iPhone only from the
+home screen app. Messages go through the browser's push service (Google, Apple, Mozilla, Microsoft),
+encrypted end to end; the app only accepts subscriptions of these services.
 
 After the first start, log in as the admin from `.env`, then under *Verwaltung* create a family and the
 accounts, and assign the accounts to the family. Change the admin password under *Konto* and remove
@@ -126,7 +143,7 @@ location / {
 ```
 
 Then set in `.env`: `SESSION_COOKIE_SECURE=1`, `TRUSTED_PROXIES=1` (the number of proxies in front; `0` when
-none, otherwise clients can fake their address) and `BASE_URL=https://...` for links in mails.
+none, otherwise clients can fake their address) and `BASE_URL=https://...` for links in mails and push messages.
 
 Even when the app is only reachable through a VPN such as Tailscale, keep HTTPS and these settings: the app
 holds health data and should be secure on its own.
@@ -227,13 +244,15 @@ setting (default 90 days) are deleted automatically.
 | `TRUSTED_PROXIES` | `0` | Number of reverse proxies whose `X-Forwarded-*` headers are trusted |
 | `SECURITY_CONTACT` | – | Contact in `/.well-known/security.txt` |
 | `PRIVACY_CONTROLLER`, `PRIVACY_CONTACT` | – | Who is responsible for the data, shown on `/privacy` |
-| `BASE_URL` | `http://localhost:5000` | Public address, for links in mails |
+| `BASE_URL` | `http://localhost:5000` | Public address, for links in mails and push messages |
 | `SCHEDULE_FILE` | `helvax/schedules/ch-2026.yaml` | The vaccination rules |
 | `CATALOGUE_FILE` | `helvax/catalogue/products-ch.yaml` | Vaccine trade names and their antigens |
 | `SMTP_HOST`, `SMTP_PORT` | –, `587` | Mail server; mail is off while `SMTP_HOST` or `MAIL_FROM` is empty |
 | `SMTP_SECURITY` | `starttls` | `starttls`, `ssl` (port 465) or `none` (local test servers only) |
 | `SMTP_USER`, `SMTP_PASSWORD` | – | SMTP login |
 | `MAIL_FROM`, `MAIL_FROM_NAME` | –, `helvax` | Sender |
+| `VAPID_PRIVATE_KEY` | – | Push messages; from `flask gen-vapid-key`; push is off while it is empty |
+| `VAPID_SUBJECT` | `mailto:MAIL_FROM`, else `BASE_URL` | Contact for the push services |
 | `LOG_LEVEL` | `INFO` | Log level |
 | `PUID`, `PGID` | `1000` | Docker only: user/group the app runs as |
 
@@ -243,7 +262,8 @@ setting (default 90 days) are deleted automatically.
 flask --app helvax create-user <username> [--name "Display name"] [--admin]   # asks for the password
 flask --app helvax make-admin <username>
 flask --app helvax seed-demo                       # fictional demo family, development only
-flask --app helvax send-notifications [--loop N]   # send queued mails
+flask --app helvax send-notifications [--loop N]   # queue due reminders, send queued mails and push messages
+flask --app helvax gen-vapid-key                   # key for push messages (line for .env)
 flask --app helvax backup <file>                   # consistent copy of the database
 ```
 

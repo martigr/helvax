@@ -14,7 +14,8 @@ due.
   library, no ORM; PyYAML for the rule files.
 - **Frontend:** server-rendered Jinja templates, one stylesheet, no build step. JavaScript only where it
   helps and is optional: confirmation dialog (`confirm.js`), password repeat check (`account.js`), ticking the
-  antigens of a chosen vaccine (`vaccination.js`), the print button (`print.js`), the service worker.
+  antigens of a chosen vaccine (`vaccination.js`), the print button (`print.js`), the push button on `/account`
+  (`push.js`), the service worker.
 - **UI language:** German (Swiss). Code, comments, commit messages and docs: English.
 - Built after the conventions of [laundry-booking](https://github.com/martigr/laundry-booking).
 
@@ -31,14 +32,15 @@ helvax/
 ├── rules.py              # the schedule and catalogue of the running app (loaded at startup)
 ├── profiles.py           # bp "profiles": profiles, vaccination entries, immunities, print view
 ├── dashboard.py          # bp "dashboard": family dashboard (/), schedule page (/schedule)
-├── account.py            # bp "account": display name, mail address, password; address confirmation link
+├── account.py            # bp "account": name, mail address, reminders, push devices, password; links from mails
 ├── admin.py              # bp "admin": accounts, families, settings, audit log page
 ├── auth.py               # bp "auth": login/logout, throttling, CSRF, login_required/admin_required, reset
 ├── audit.py              # audit log: record() of logins and changes, rotation
 ├── db.py                 # connection per request, SCHEMA, init_db(), settings
 ├── users.py              # create_user(), get_user*(), set_password(), clean_email(), UserError
-├── notifications.py      # mail outbox: queue_*(), send_pending(), run_once(); signed tokens
+├── notifications.py      # outbox: queue_due_vaccinations() (reminders), queue_*(), send_pending(), run_once()
 ├── mail.py               # is_configured(), deliver(): one plain-text mail over SMTP
+├── push.py               # Web Push: VAPID key, valid_subscription(), deliver() (pywebpush)
 ├── security.py           # security headers (CSP etc.), /.well-known/security.txt
 ├── privacy.py            # public privacy notice /privacy
 ├── accesslog.py          # Gunicorn logger class that blanks tokens in the access log
@@ -47,7 +49,7 @@ helvax/
 ├── static/               # style.css, *.js, manifest, icons
 └── templates/            # base.html, _status.html (badges), dashboard, profile, profile_form,
                           # vaccination_form, profile_print, _record_matrix (booklet table), schedule,
-                          # account, admin, audit, auth pages
+                          # account, unsubscribe, admin, audit, auth pages
 tests/                    # one file per area; data/test-schedule.yaml (made-up rules for engine tests)
 docs/sources/             # the BAG schedule PDF the rules are based on
 OPEN_QUESTIONS.md         # every interpretation in the rules, for medical review
@@ -97,10 +99,21 @@ lot, administered_by, note       PRIMARY KEY (vaccination_id, antigen)
 created_at, updated_at
 
 immunities                       notifications (outbox), login_failures, settings, audit_log
-──────────                       as in laundry-booking (see db.py)
-id, profile_id → CASCADE
+──────────                       as in laundry-booking (see db.py); notifications.push_subscription_id
+id, profile_id → CASCADE         → push_subscriptions CASCADE (NULL = mail)
 antigen, kind ('disease' | 'serology'), date NULL, note
 UNIQUE (profile_id, antigen)
+
+users (reminder columns)         profile_watches                  reminder_log
+────────────────────────         ───────────────                  ────────────
+remind_mail     INTEGER 1        user_id    → users CASCADE       user_id → users CASCADE
+remind_push     INTEGER 1        profile_id → profiles CASCADE    channel 'mail' | 'push'
+remind_leads    TEXT '56,7'      PRIMARY KEY (user_id,            key     see Reminders
+remind_overdue_days INTEGER 30                profile_id)         created_at
+                                                                  PRIMARY KEY (user_id, channel, key)
+push_subscriptions
+──────────────────
+id, user_id → users CASCADE, endpoint UNIQUE, p256dh, auth, created_at
 ```
 
 - **Per antigen:** a combination vaccine is one `vaccinations` row with one `vaccination_antigens` row per
@@ -111,6 +124,38 @@ UNIQUE (profile_id, antigen)
 - `PRAGMA foreign_keys = ON` on every connection; WAL mode; `init_db()` in a `BEGIN IMMEDIATE` transaction.
 - Migrations: new tables go into `SCHEMA`; columns added after the first release into `db.ADDED_COLUMNS` with a
   test that builds the old schema (`test_columns_are_added_to_an_existing_database`).
+
+## Reminders and push (phase 2)
+
+- **Settings** per account on `/account` (`action=reminders`): channels (`remind_mail`, `remind_push`), lead
+  times in days before the recommended date (`remind_leads`, choices in `notifications.LEAD_CHOICES`), the repeat
+  interval while overdue (`remind_overdue_days`, `OVERDUE_CHOICES`, 0 = off), and the watched profiles
+  (`profile_watches`). Profiles are created only through `profiles.create_profile()`, which makes every account of
+  the family watch the new profile; an account moved to another family by an admin watches all of that family's
+  profiles (`profiles.watch_family()`), and the scan only follows watches inside the account's own family.
+- **Scan:** `notifications.run_once()` (the notifier, every minute) calls `queue_due_vaccinations(con)`: for each
+  account with a usable channel (mail: on and a confirmed address; push: on, configured and at least one device)
+  it evaluates each watched profile with `profiles.evaluate()` (needs an app context, no request) and groups the
+  statuses with `profiles.group_actionable()`. A group (one combination vaccine) is identified by
+  `<profile>:<antigens>:<date>`, the date being the recommended one, or the earliest one for "as soon as possible"
+  doses (their recommended date is always today). Not yet overdue: the smallest lead time already reached gives
+  the key `...:<lead>` (so a profile created late doesn't get the 8-week and the 1-week reminder at once).
+  Overdue: `...:overdue:<day>` when the last overdue reminder of the group is at least `remind_overdue_days` old.
+  Keys already in `reminder_log` for that account and channel are skipped.
+- **One message per profile and run:** all new keys of a profile go into one mail (and one push per device). The
+  outbox `dedupe_key` is `due:<profile>:<user>:<time>:mail` or `...:push:<subscription>`; the dedupe across runs is
+  `reminder_log`, which is kept 10 years (`KEEP_REMINDER_LOG`), because a dose can stay due for years (age windows)
+  and the outbox is pruned after 30 days. Reminders expire after 7 days unsent (`REMINDER_VALID`).
+- **Texts:** subject "helvax: Impfung bei Mia", "Bei Mia ist bald eine Impfung fällig." / "... ist eine Impfung
+  fällig." / "... überfällig.", the link to `/profiles/<id>`, and in mails a footer with the one-click
+  unsubscribe link (`/unsubscribe/<token>`, signed, GET shows a button, POST sets `remind_mail = 0`) and
+  `/account`. Never the vaccine, antigen or disease (tests check every antigen key, label, short name and product
+  name against mails and push payloads).
+- **Push** (`push.py`, ported from laundry-booking): `VAPID_PRIVATE_KEY` from `flask gen-vapid-key`; `push.js`
+  subscribes the browser and posts endpoint and keys to `/push/subscribe` (form fields with CSRF token; only https
+  endpoints of the known push services, keys of the right size; at most 10 devices per account; a device belongs
+  to whoever subscribed it last). The payload is JSON `{title, body, url, tag}` shown by `templates/sw.js`. A 404/410
+  from the push service deletes the subscription. `to_addr` of push rows is only the push service's host.
 
 ### Phase 3 (designed, not built)
 
@@ -243,7 +288,10 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 | `/vaccinations/<id>/delete` | POST | family | |
 | `/profiles/<id>/immunities` | POST | family | `antigen`, `kind` (`disease`/`serology`), optional `date`, `note`; one per antigen |
 | `/immunities/<id>/delete` | POST | family | |
-| `/account` | GET/POST | user | `action=name`, `action=email` (needs confirming), `action=verify_email`, `action=password` |
+| `/account` | GET/POST | user | `action=name`, `action=email` (needs confirming), `action=verify_email`, `action=password`, `action=reminders` (`remind_mail`, `remind_push`, `leads` repeated, `overdue_days`, `watch` repeated profile ids; 400 for values not offered or profiles of other families) |
+| `/push/subscribe` | POST | user | `endpoint`, `p256dh`, `auth` from `push.js`; 204; 400 for invalid ones; 404 without push config |
+| `/push/unsubscribe` | POST | user | `endpoint`; 204; 400 when empty |
+| `/unsubscribe/<token>` | GET/POST | token | Signed link in reminder mails; GET shows a button, POST switches mail reminders off; 404 for invalid tokens |
 | `/verify-email/<token>` | GET/POST | token | Signed, 7 days, only for the address it was sent to; GET shows a button |
 | `/admin` | GET | admin | Accounts, families, settings |
 | `/admin/users` | POST | admin | Create account |
@@ -262,8 +310,10 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 - **Family isolation** as described under *Request flow*; tests in `test_profiles.py`
   (`test_other_family_gets_404`). Admins manage accounts and families but see no profiles of other families.
 - **No health details** outside the pages: the audit log names the profile only ("Impfung erfasst · Mia");
-  mails (phase 2) will say "Bei Mia ist eine Impfung fällig" plus a link, never the vaccine; URLs carry ids,
-  not data; the access log blanks tokens.
+  reminders by mail and push say "Bei Mia ist eine Impfung fällig" plus a link, never the vaccine; URLs carry
+  ids, not data; the access log blanks tokens.
+- **Push endpoints** are user input: only https URLs of the browsers' push services are accepted, so the
+  notifier can't be made to POST to internal addresses.
 - **CSRF** on every POST (hand-written check, `secrets.compare_digest`); **sessions** end on password change;
   **login throttling** (10 per user, 20 per address in 15 minutes); **CSP** without inline scripts; HSTS over
   HTTPS; `MAX_CONTENT_LENGTH` 64 KB; passwords 10–128 characters, scrypt hashes.
@@ -287,6 +337,7 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 | `app` | Temp DB; `alice` (admin) + `bob` in family 1 *Muster*, `carol` in family 2 *Beispiel*; clock 2026-10-15 14:20 |
 | `client`, `login`, `csrf`, `query` | Test client; `login('bob')` returns a CSRF token; `query(sql, *params)` → tuples |
 | `mailbox` | Mails "sent" as `(to, subject, body)`; mail is configured with `BASE_URL=https://hx.test` |
+| `pushbox` | Switches push on (`VAPID_KEY`); pushes "sent" as `(endpoint, payload dict, ttl)` |
 
 CI (`.github/workflows/ci.yml`): `ruff check .`, `pytest`, `shellcheck`, Docker build and
 `scripts/docker-smoke-test.sh`. `audit.yml` runs `pip-audit` on every PR, push to `main` and weekly.

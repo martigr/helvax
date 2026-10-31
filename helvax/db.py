@@ -27,7 +27,13 @@ SCHEMA = [
         email TEXT,
         email_verified INTEGER NOT NULL DEFAULT 0,
         session_version INTEGER NOT NULL DEFAULT 0,
-        family_id INTEGER REFERENCES families(id) ON DELETE SET NULL
+        family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+        -- Reminders of due vaccinations (notifications.queue_due_vaccinations()): channels, lead times in
+        -- days before the recommended date ('56,7'; '' = none), repeat interval while overdue (0 = off)
+        remind_mail INTEGER NOT NULL DEFAULT 1,
+        remind_push INTEGER NOT NULL DEFAULT 1,
+        remind_leads TEXT NOT NULL DEFAULT '56,7',
+        remind_overdue_days INTEGER NOT NULL DEFAULT 30
     )
     """,
     # A person whose vaccinations are recorded (no login of its own)
@@ -85,13 +91,47 @@ SCHEMA = [
         UNIQUE (profile_id, antigen)
     )
     """,
+    # The profiles an account gets reminders for. New profiles are watched by every account of the family,
+    # and an account that joins a family watches all of its profiles (profiles.watch_profile(),
+    # watch_family()); the reminder scan also checks that the profile is in the account's family.
+    """
+    CREATE TABLE IF NOT EXISTS profile_watches (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+        PRIMARY KEY (user_id, profile_id)
+    )
+    """,
+    # Reminders already queued, so each one goes out once per account and channel ('mail' / 'push').
+    # key: '<profile>:<antigens>:<recommended date>:<lead days>' or '...:overdue:<n>' (see notifications.py).
+    # Kept longer than the outbox rows (KEEP_REMINDER_LOG), since a dose can stay due for years.
+    """
+    CREATE TABLE IF NOT EXISTS reminder_log (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        channel TEXT NOT NULL,
+        key TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, channel, key)
+    )
+    """,
+    # Browsers that get push messages (push.py), one row per device; created by the button on /account
+    """
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        endpoint TEXT UNIQUE NOT NULL,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """,
     """
     CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
     )
     """,
-    # Outbox: mails (and push messages) are queued here and sent by `flask send-notifications`
+    # Outbox: mails and push messages are queued here and sent by `flask send-notifications`.
+    # push_subscription_id is set on push messages (NULL = mail); they go when the device unsubscribes.
     """
     CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,7 +143,8 @@ SCHEMA = [
         expires_at TEXT,
         sent_at TEXT,
         attempts INTEGER NOT NULL DEFAULT 0,
-        last_error TEXT
+        last_error TEXT,
+        push_subscription_id INTEGER REFERENCES push_subscriptions(id) ON DELETE CASCADE
     )
     """,
     # Failed logins of the last minutes, for auth.login_blocked(); key is 'user:<name>' or 'ip:<addr>'

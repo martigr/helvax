@@ -105,6 +105,8 @@ fieldset.field legend { padding: 0; margin-bottom: 6px; }
 .copy-row input { flex: 1; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
 .check { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-2); min-height: 44px; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.channels { display: flex; flex-wrap: wrap; column-gap: 24px; }
+.push-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 
 .flash { padding: 14px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; border: 1px solid; }
 .flash-ok { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-line); }
