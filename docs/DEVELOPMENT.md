@@ -47,6 +47,7 @@ helvax/
 ├── pwa.py                # bp "pwa": service worker /sw.js, offline page /offline
 ├── cli.py, demo.py       # flask commands; fictional demo data for seed-demo
 ├── importer.py           # CSV import of vaccination entries (parse() checks, save() inserts)
+├── evacdoc.py            # eVACDOC (CDA-CH-VACD XML) → rows for the CSV import
 ├── static/               # style.css, *.js, manifest, icons
 └── templates/            # base.html, _status.html (badges), dashboard, profile, profile_form,
                           # vaccination_form, profile_print, _record_matrix (booklet table), schedule,
@@ -181,6 +182,12 @@ row) are skipped. Any error: nothing is saved. Otherwise the command prints the 
 one audit entry `vaccinations_imported` (`<profile>: <count>`, user `Kommandozeile (<username>)`). The output
 on the terminal names vaccines (the user asked for it); nothing about them goes into logs or the audit log.
 `flask list-products [search] [--antigens]` prints the catalogue keys and antigen keys for the file.
+
+`flask convert-evacdoc <xml> <csv>` (`evacdoc.convert()`, standard-library ElementTree; files with a DOCTYPE
+or ENTITY are refused, at most 10 MB) writes such a CSV (UTF-8 with BOM, `;`) from an eVACDOC document. It
+only produces a file to check and edit; the import does the validation. The mapping rules (SNOMED codes →
+antigens, when a catalogue product is used) are in `OPEN_QUESTIONS.md`; the test file
+`tests/data/evacdoc-test.xml` is made up.
 
 ## Schedule file
 

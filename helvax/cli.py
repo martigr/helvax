@@ -1,4 +1,5 @@
 """Command line: flask --app helvax <command>."""
+import csv
 import sqlite3
 import time
 
@@ -6,7 +7,7 @@ import click
 from flask import current_app
 from flask.cli import with_appcontext
 
-from . import audit, demo, importer, mail, notifications, push, rules
+from . import audit, demo, evacdoc, importer, mail, notifications, push, rules
 from .db import get_db
 from .users import UserError, create_user, get_user_by_username
 
@@ -176,7 +177,29 @@ def import_vaccinations_command(username, profile, file, dry_run, yes):
     click.echo(f'{summary} gespeichert.')
 
 
+@click.command('convert-evacdoc')
+@click.argument('source', type=click.File('rb'))
+@click.argument('target', type=click.Path(dir_okay=False, writable=True))
+@with_appcontext
+def convert_evacdoc_command(source, target):
+    """Wandelt ein eVACDOC-Impfdossier (XML, z. B. von meineimpfungen.ch) in eine CSV-Datei für
+    import-vaccinations um. Zeigt an, was nicht übernommen werden konnte."""
+    try:
+        rows, notes = evacdoc.convert(source.read(), rules.schedule(), rules.catalogue())
+    except evacdoc.EvacdocError as e:
+        raise click.ClickException(str(e)) from None
+    with open(target, 'w', encoding='utf-8-sig', newline='') as f:  # BOM and ';': opens directly in Excel
+        writer = csv.DictWriter(f, fieldnames=importer.COLUMNS, delimiter=';')
+        writer.writeheader()
+        writer.writerows(rows)
+    for note in notes:
+        click.echo(f'Hinweis: {note}')
+    click.echo(f'{len(rows)} Impfung(en) nach {target} geschrieben. Bitte prüfen, dann: '
+               f'import-vaccinations <benutzer> <profil> {target} --dry-run')
+
+
 def init_app(app):
     for command in (create_user_command, make_admin_command, seed_demo_command, send_notifications_command,
-                    gen_vapid_key_command, backup_command, list_products_command, import_vaccinations_command):
+                    gen_vapid_key_command, backup_command, list_products_command, import_vaccinations_command,
+                    convert_evacdoc_command):
         app.cli.add_command(command)

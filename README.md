@@ -52,7 +52,7 @@ All screenshots show the fictional demo family of `flask seed-demo`.
 - Home screen app (PWA) with an offline page; pages are never cached.
 
 - **Import** of a vaccination record from a CSV file on the command line (`import-vaccinations`), checked like
-  the form, with a preview.
+  the form, with a preview; `convert-evacdoc` turns an eVACDOC export (e.g. meineimpfungen.ch) into such a file.
 
 Planned: photos of the paper booklet, import in the web interface.
 
@@ -271,6 +271,7 @@ flask --app helvax backup <file>                   # consistent copy of the data
 flask --app helvax list-products [<search>]        # vaccine catalogue: keys, names, antigens
 flask --app helvax list-products --antigens        # antigen keys (for vaccines not in the catalogue)
 flask --app helvax import-vaccinations <username> <profile> <file.csv> [--dry-run] [--yes]
+flask --app helvax convert-evacdoc <file.xml> <file.csv>   # eVACDOC export (meineimpfungen.ch) → CSV for the import
 ```
 
 ### Importing vaccinations (CSV)
@@ -294,6 +295,11 @@ date;product;product_name;antigens;doses;lot;administered_by;note
 10.05.2020;infanrix-hexa;;;;A12B;Praxis Beispiel;
 01.03.2022;other;Impfstoff aus dem Ausland;dip tet polio;;;;
 ```
+
+**From meineimpfungen.ch (eVACDOC XML):** `convert-evacdoc export.xml impfungen.csv` writes the vaccinations
+of the file as such a CSV and lists what it left out (entries without an antigen of the schedule, e.g. BCG or
+"Meningococcus" without serogroup; past illnesses and the problem list, which you record in the app). Check
+and edit the CSV, then import it with `--dry-run` first. Details: [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md#evacdoc-import-flask-convert-evacdoc).
 
 In Docker, copy the file into the container first (`docker compose cp file.csv web:/data/import.csv`), run
 the command with `--user 1000:1000` and delete the file afterwards: it contains health data.

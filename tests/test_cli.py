@@ -196,3 +196,51 @@ def test_import_ambiguous_and_familyless(app, tmp_path, lena):
     assert r.exit_code == 1 and 'Mehrere Profile' in r.output
     r = run_import(app, tmp_path, text, 'alice', 'Lena')
     assert r.exit_code == 1 and 'keiner Familie' in r.output
+
+
+# --- convert-evacdoc -------------------------------------------------------------------------------
+
+EVACDOC = os.path.join(os.path.dirname(__file__), 'data', 'evacdoc-test.xml')
+
+
+def test_convert_evacdoc(app, tmp_path, lena, query):
+    target = tmp_path / 'out.csv'
+    r = app.test_cli_runner().invoke(args=['convert-evacdoc', EVACDOC, str(target)])
+    assert r.exit_code == 0, r.output
+    assert target.read_bytes().startswith(b'\xef\xbb\xbfdate;product;product_name;antigens;doses;lot;')
+    assert target.read_text(encoding='utf-8-sig').splitlines()[1:] == [
+        '05.01.2020;other;Testpolio oral;polio;;;;',
+        '05.01.2020;other;Boostrix;dip tet;;;;',
+        '10.02.2020;other;Testkombi;dip;;;;',
+        '01.06.2020;fsme-immun;;;;;;',
+        '15.03.2021;boostrix;;;;TEST01;T. Muster;']
+    out = r.output
+    assert 'Testkombi vom 10.02.2020: Meningococcus vaccination (procedure) hat kein Antigen' in out
+    assert 'nur der Rest übernommen' in out
+    assert 'BCG vom 05.01.2020: BCG vaccination hat kein Antigen im Impfplan, weggelassen' in out
+    assert out.count('nicht verabreicht oder nicht abgeschlossen') == 2
+    assert 'Revaxis vom (ohne Datum): kein Datum' in out
+    assert 'Abschnitt «Bisherige Krankheiten»' in out and 'Abschnitt «Impfplan»' not in out
+    assert '5 Impfung(en)' in out
+
+    # The result is accepted by the import (Lena is born 2020-01-10: the rows from 05.01.2020 are too early)
+    r = app.test_cli_runner().invoke(args=['import-vaccinations', 'bob', 'Lena', str(target), '--dry-run'])
+    assert r.exit_code == 1 and r.output.count('vor dem Geburtsdatum') == 2, r.output
+    with app.app_context(), get_db() as con:
+        con.execute("UPDATE profiles SET birth_date = '2019-01-01' WHERE id = ?", (lena,))
+    r = app.test_cli_runner().invoke(args=['import-vaccinations', 'bob', 'Lena', str(target), '--yes'])
+    assert r.exit_code == 0 and '5 Impfung(en) für Lena gespeichert' in r.output, r.output
+
+
+@pytest.mark.parametrize('content, message', [
+    (b'kein xml', 'Kein gültiges XML'),
+    (b'<root/>', 'Kein HL7-CDA-Dokument'),
+    (b'<ClinicalDocument xmlns="urn:hl7-org:v3"/>', 'keinen Abschnitt «Impfungen»'),
+    (b'<?xml version="1.0"?><!DOCTYPE x [<!ENTITY a "aaaa">]><x>&a;</x>', 'DOCTYPE'),
+])
+def test_convert_evacdoc_rejects_other_files(app, tmp_path, content, message):
+    source = tmp_path / 'in.xml'
+    source.write_bytes(content)
+    r = app.test_cli_runner().invoke(args=['convert-evacdoc', str(source), str(tmp_path / 'out.csv')])
+    assert r.exit_code == 1 and message in r.output, r.output
+    assert not (tmp_path / 'out.csv').exists()

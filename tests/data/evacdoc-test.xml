@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Made-up eVACDOC (CDA-CH-VACD) for tests: fictional person, dates and lots. -->
+<ClinicalDocument xmlns="urn:hl7-org:v3">
+  <title>eVACDOC</title>
+  <recordTarget/>
+  <component><structuredBody>
+    <component><section>
+      <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" displayName="History of immunizations"/>
+      <title>Impfungen</title>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="completed"/>
+          <effectiveTime value="20210315"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Boostrix"/>
+            <name>Boostrix</name><lotNumberText>TEST01</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <performer><assignedEntity><assignedPerson><name><given>T.</given><family>Muster</family></name></assignedPerson></assignedEntity></performer>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="76668005" codeSystem="2.16.840.1.113883.6.96" displayName="Diphtheria vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="127786006" codeSystem="2.16.840.1.113883.6.96" displayName="Tetanus vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="39343008" codeSystem="2.16.840.1.113883.6.96" displayName="Pertussis vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="completed"/>
+          <effectiveTime value="20200601"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="FSME-Immun CC"/>
+            <name>FSME-Immun CC</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="281658005" codeSystem="2.16.840.1.113883.6.96" displayName="Tick-borne encephalitis vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="completed"/>
+          <effectiveTime value="20200105"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Testpolio oral"/>
+            <name>Testpolio oral</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="72093006" codeSystem="2.16.840.1.113883.6.96" displayName="Poliomyelitis vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="completed"/>
+          <effectiveTime value="20200105"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Boostrix"/>
+            <name>Boostrix</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="76668005" codeSystem="2.16.840.1.113883.6.96" displayName="Diphtheria vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="127786006" codeSystem="2.16.840.1.113883.6.96" displayName="Tetanus vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="completed"/>
+          <effectiveTime value="20200210"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Testkombi"/>
+            <name>Testkombi</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="76668005" codeSystem="2.16.840.1.113883.6.96" displayName="Diphtheria vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="41088001" codeSystem="2.16.840.1.113883.6.96" displayName="Meningococcus vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="completed"/>
+          <effectiveTime value="20200105"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="BCG"/>
+            <name>BCG</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="42284007" codeSystem="2.16.840.1.113883.6.96" displayName="BCG vaccination"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="true">
+          <statusCode code="completed"/>
+          <effectiveTime value="20200301"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Revaxis"/>
+            <name>Revaxis</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="76668005" codeSystem="2.16.840.1.113883.6.96" displayName="Diphtheria vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="127786006" codeSystem="2.16.840.1.113883.6.96" displayName="Tetanus vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="72093006" codeSystem="2.16.840.1.113883.6.96" displayName="Poliomyelitis vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="aborted"/>
+          <effectiveTime value="20200401"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Revaxis"/>
+            <name>Revaxis</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="76668005" codeSystem="2.16.840.1.113883.6.96" displayName="Diphtheria vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="127786006" codeSystem="2.16.840.1.113883.6.96" displayName="Tetanus vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="72093006" codeSystem="2.16.840.1.113883.6.96" displayName="Poliomyelitis vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+          <statusCode code="completed"/>
+          <effectiveTime nullFlavor="UNK"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Revaxis"/>
+            <name>Revaxis</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="76668005" codeSystem="2.16.840.1.113883.6.96" displayName="Diphtheria vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="127786006" codeSystem="2.16.840.1.113883.6.96" displayName="Tetanus vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="72093006" codeSystem="2.16.840.1.113883.6.96" displayName="Poliomyelitis vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+    </section></component>
+    <component><section>
+      <code code="11348-0" codeSystem="2.16.840.1.113883.6.1" displayName="HISTORY OF PAST ILLNESS"/>
+      <title>Bisherige Krankheiten</title>
+      <entry><act classCode="ACT" moodCode="EVN"><text>H/O: chickenpox</text></act></entry>
+    </section></component>
+    <component><section>
+      <code code="18776-5" codeSystem="2.16.840.1.113883.6.1"/>
+      <title>Impfplan</title>
+      <entry>
+        <substanceAdministration classCode="SBADM" moodCode="PRP" negationInd="false">
+          <statusCode code="active"/>
+          <effectiveTime value="20300101"/>
+          <consumable><manufacturedProduct><manufacturedMaterial>
+            <code code="J07XX01" codeSystem="2.16.840.1.113883.6.73" displayName="Boostrix"/>
+            <name>Boostrix</name><lotNumberText>-</lotNumberText>
+          </manufacturedMaterial></manufacturedProduct></consumable>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="76668005" codeSystem="2.16.840.1.113883.6.96" displayName="Diphtheria vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="127786006" codeSystem="2.16.840.1.113883.6.96" displayName="Tetanus vaccination (procedure)"/></observation></entryRelationship>
+          <entryRelationship typeCode="RSON"><observation classCode="OBS" moodCode="EVN">
+            <code code="39343008" codeSystem="2.16.840.1.113883.6.96" displayName="Pertussis vaccination (procedure)"/></observation></entryRelationship>
+        </substanceAdministration>
+      </entry>
+    </section></component>
+  </structuredBody></component>
+</ClinicalDocument>
