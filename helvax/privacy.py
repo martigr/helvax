@@ -19,7 +19,8 @@ def privacy():
     return render_template('privacy.html', controller=current_app.config['PRIVACY_CONTROLLER'],
                            contact=contact.removeprefix('mailto:') if contact else None,
                            contact_href=contact_link(contact), audit_days=get_setting('audit_days'),
-                           keep_mail_days=notifications.KEEP_SENT.days)
+                           keep_mail_days=notifications.KEEP_SENT.days,
+                           keep_reminder_years=round(notifications.KEEP_REMINDER_LOG.days / 365.25))
 
 
 def init_app(app):

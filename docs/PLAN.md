@@ -42,8 +42,8 @@ Defaults chosen without asking:
 | M4b | Record as a booklet-style table (`?ansicht=tabelle`), on screen and in print (owner request) | done |
 | — | Phase 1 merged into `main` (PR #1, CI green) | done |
 | — | **Owner review of phase 1** (rules in `OPEN_QUESTIONS.md`, catalogue, UI) | **open** |
-| M6 | Notifications by mail (see below) | open |
-| M7 | Web Push (VAPID) | open |
+| M6 | Reminders by mail: settings on `/account`, scan in the notifier, unsubscribe link | done |
+| M7 | Web Push (VAPID): `push.py`, `push.js`, subscriptions, push reminders | done |
 | ~~M8~~ | ~~iCal feed per account~~: dropped by the owner (not much use here) | dropped |
 | — | Phase 3 (photos of the booklet, import): designed in `docs/DEVELOPMENT.md`, not built | later |
 
@@ -57,7 +57,25 @@ build and smoke test) green on PR #1.
 - Check the product catalogue `helvax/catalogue/products-ch.yaml` (not from the BAG document).
 - ~~`LICENSE` carries the copyright holder's name~~: decided, the name stays.
 
-## Phase 2 design (M6–M7)
+## Phase 2 design (M6–M7), as built
+
+Built on branch `claude/phase-2` as designed below, with these changes (details in `docs/DEVELOPMENT.md`,
+*Reminders and push*):
+
+- **One message per profile and run** instead of one per group and lead time: an infant often has several groups
+  due on the same day, and identical mails "Bei Mia ist eine Impfung fällig" would be noise. The per-group dedupe
+  moved to a new table `reminder_log (user_id, channel, key)`, kept 10 years, because the outbox is pruned after
+  30 days while a dose can stay due for years (age windows); otherwise reminders would repeat after the pruning.
+- **Group key** `<profile>:<antigens>:<date>`: for "as soon as possible" doses the engine's recommended date is
+  always today, so the key uses the earliest date there. Overdue repeats are counted from the last overdue
+  reminder actually sent (`...:overdue:<day>`), not from the start of the overdue period.
+- **Watches** are positive rows: `profiles.create_profile()` adds the new profile for every account of the family,
+  an admin moving an account to another family resets its watches to that family's profiles.
+- Defaults: mail and push reminders on (push only reaches devices the user subscribed), lead times 8 weeks and
+  1 week, overdue every 30 days. Push reminders are deduped per account, not per device: a device added later
+  doesn't receive older reminders.
+
+Original design:
 
 Port the matching parts of [laundry-booking](https://github.com/martigr/laundry-booking) (public; the push code was
 left out of the phase 1 scaffold) (`laundry/notifications.py`, `push.py`, `profile.py`,

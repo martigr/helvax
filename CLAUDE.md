@@ -19,14 +19,15 @@ flask --app helvax --debug run               # dev server on :5000
 - `helvax/`: the app package. `create_app()` in `__init__.py`; blueprints `auth`, `dashboard` (also `/schedule`),
   `profiles` (profiles, vaccination entries, immunities, print view), `account`, `admin`, `pwa`.
   Data access in `db.py` and `users.py`; clock and age arithmetic in `dates.py`; CLI in `cli.py`; demo data in
-  `demo.py`; security headers in `security.py`; audit log in `audit.py`; mail outbox in `notifications.py`.
+  `demo.py`; security headers in `security.py`; audit log in `audit.py`; outbox and reminder scan in `notifications.py`;
+  Web Push in `push.py`.
   `__version__` in `__init__.py` must match `pyproject.toml`.
 - **Rules:** `schedule.py` loads and validates `schedules/ch-2026.yaml`; `engine.py` evaluates a profile
   (pure functions); `catalogue/` maps trade names to antigens; `rules.py` holds both for the running app.
 - `helvax/templates/`: Jinja templates extending `base.html`; status macros in `_status.html`.
 - `helvax/static/style.css`: all styling; colours are CSS variables in `:root`; print styles at the end.
 - `tests/`: pytest, one file per area; fixtures in `conftest.py` (`app`, `client`, `login`, `csrf`, `query`,
-  `mailbox`). Engine tests use the made-up `tests/data/test-schedule.yaml`; `test_schedule_ch.py` tests the
+  `mailbox`, `pushbox`). Engine tests use the made-up `tests/data/test-schedule.yaml`; `test_schedule_ch.py` tests the
   real rules.
 
 ## Rules
@@ -44,7 +45,8 @@ flask --app helvax --debug run               # dev server on :5000
 - **No health details** in logs, audit `detail`, mails, push messages or URLs: name the profile, never the
   vaccine, antigen or disease. Tokens never in logs (`accesslog.py` redacts them).
 - DB access through `get_db()`; writes inside `with get_db() as con:`. Create users only via `users.create_user()`,
-  vaccination entries only via `profiles.create_entry()`.
+  profiles only via `profiles.create_profile()` (adds the reminder watches), vaccination entries only via
+  `profiles.create_entry()`.
 - Every POST form needs `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">`.
 - Log every change with `audit.record(con, action, detail)` in the view's transaction; new actions go into
   `audit.ACTIONS`.

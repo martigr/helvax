@@ -6,7 +6,7 @@ import click
 from flask import current_app
 from flask.cli import with_appcontext
 
-from . import audit, demo, mail, notifications
+from . import audit, demo, mail, notifications, push
 from .db import get_db
 from .users import UserError, create_user, get_user_by_username
 
@@ -56,10 +56,11 @@ def seed_demo_command():
               help='Immer wieder ausführen, alle SECONDS Sekunden (für einen eigenen Container).')
 @with_appcontext
 def send_notifications_command(interval):
-    """Erinnerungen einplanen und alle wartenden Mails verschicken."""
+    """Erinnerungen einplanen und alle wartenden Mails und Push-Mitteilungen verschicken."""
     app = current_app._get_current_object()
-    if not mail.is_configured():
-        app.logger.warning('Mail (SMTP_HOST, MAIL_FROM) is not configured; no notifications are sent.')
+    if not (mail.is_configured() or push.is_configured()):
+        app.logger.warning('Neither mail (SMTP_HOST, MAIL_FROM) nor push (VAPID_PRIVATE_KEY) is configured; '
+                           'no notifications are sent.')
     while True:
         with app.app_context():  # fresh DB connection per run
             sent, failed = notifications.run_once()
@@ -68,6 +69,12 @@ def send_notifications_command(interval):
         if not interval:
             break
         time.sleep(interval)
+
+
+@click.command('gen-vapid-key')
+def gen_vapid_key_command():
+    """Erzeugt einen Schlüssel für Push-Mitteilungen (Zeile für die .env-Datei)."""
+    click.echo(f'VAPID_PRIVATE_KEY={push.new_private_key()}')
 
 
 @click.command('backup')
@@ -86,5 +93,5 @@ def backup_command(target):
 
 def init_app(app):
     for command in (create_user_command, make_admin_command, seed_demo_command,
-                    send_notifications_command, backup_command):
+                    send_notifications_command, gen_vapid_key_command, backup_command):
         app.cli.add_command(command)

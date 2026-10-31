@@ -1,17 +1,43 @@
-"""The own account: display name, mail address and password; the confirmation link from mails.
+"""The own account: display name, mail address, reminders, push devices and password; the links from
+mails (confirm address, unsubscribe).
 
 (Named `account` rather than `profile`: profiles are the people whose vaccinations are recorded.)
 """
-from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
 from werkzeug.security import check_password_hash
 
-from . import audit, mail
+from . import audit, dates, mail, push
 from .auth import keep_session, login_required
 from .db import get_db
-from .notifications import queue_email_verification, read_verify_token
+from .notifications import (
+    LEAD_CHOICES,
+    OVERDUE_CHOICES,
+    parse_leads,
+    queue_email_verification,
+    read_unsubscribe_token,
+    read_verify_token,
+)
+from .profiles import family_profiles
 from .users import MAX_NAME_LENGTH, MIN_PASSWORD_LENGTH, UserError, clean_email, get_user, set_password
 
 bp = Blueprint('account', __name__)
+
+# Unsubscribe link kinds: (column to switch off, label for the confirmation page). Only the mail
+# channel: push messages are switched off on /account or on the device.
+UNSUBSCRIBE = {
+    'reminder': ('remind_mail', 'Erinnerungen an fällige Impfungen per Mail'),
+}
+MAX_PUSH_DEVICES = 10  # per user; subscribing another one drops the oldest
+
+
+def channels(by_mail, by_push):
+    """German summary for the audit log, e.g. 'Mail + Push'."""
+    return ' + '.join(name for name, on in (('Mail', by_mail), ('Push', by_push)) if on) or 'aus'
+
+
+def watched_ids():
+    return {r['profile_id'] for r in get_db().execute('SELECT profile_id FROM profile_watches WHERE user_id = ?',
+                                                      (g.user['id'],))}
 
 
 @bp.route('/account', methods=['GET', 'POST'])
@@ -22,11 +48,19 @@ def index():
         members = [r['display_name'] for r in get_db().execute(
             'SELECT display_name FROM users WHERE family_id = ? AND id != ? ORDER BY display_name COLLATE NOCASE',
             (g.user['family_id'], g.user['id']))]
+        push_endpoints = [r['endpoint'] for r in get_db().execute(
+            'SELECT endpoint FROM push_subscriptions WHERE user_id = ?', (g.user['id'],))]
         return render_template('account.html', min_pw=MIN_PASSWORD_LENGTH, max_name=MAX_NAME_LENGTH,
-                               family=family and family['name'], members=members)
+                               family=family and family['name'], members=members,
+                               lead_choices=LEAD_CHOICES, leads=parse_leads(g.user['remind_leads']),
+                               overdue_choices=OVERDUE_CHOICES, profiles=family_profiles(), watched=watched_ids(),
+                               push_endpoints=push_endpoints,
+                               push_key=push.public_key() if push.is_configured() else None)
 
     action = request.form.get('action')
-    if action == 'name':
+    if action == 'reminders':
+        save_reminders()
+    elif action == 'name':
         name = request.form.get('display_name', '').strip()
         if not 1 <= len(name) <= MAX_NAME_LENGTH:
             flash(f'Der Anzeigename muss 1–{MAX_NAME_LENGTH} Zeichen lang sein.', 'warn')
@@ -71,6 +105,96 @@ def index():
             except UserError as e:
                 flash(str(e), 'warn')
     return redirect(url_for('account.index'))
+
+
+def save_reminders():
+    """action=reminders: channels, lead times, overdue interval, watched profiles. Values the form doesn't
+    offer are 400, also the id of a profile of another family."""
+    form = request.form
+    try:
+        leads = [int(v) for v in form.getlist('leads')]
+        overdue_days = int(form.get('overdue_days', ''))
+        watch = {int(v) for v in form.getlist('watch')}
+    except ValueError:
+        abort(400)
+    if not set(leads) <= dict(LEAD_CHOICES).keys() or overdue_days not in dict(OVERDUE_CHOICES):
+        abort(400)
+    family = {p['id']: p['display_name'] for p in family_profiles()}
+    if not watch <= family.keys():
+        abort(400)
+    by_mail = bool(form.get('remind_mail'))
+    # Without push config the form has no push box; keep the choice for when push comes back
+    by_push = bool(form.get('remind_push')) if push.is_configured() else bool(g.user['remind_push'])
+    leads_text = ','.join(str(v) for v in sorted(set(leads), reverse=True))
+    with get_db() as con:
+        con.execute('UPDATE users SET remind_mail = ?, remind_push = ?, remind_leads = ?, remind_overdue_days = ? '
+                    'WHERE id = ?', (int(by_mail), int(by_push), leads_text, overdue_days, g.user['id']))
+        con.execute('DELETE FROM profile_watches WHERE user_id = ?', (g.user['id'],))
+        con.executemany('INSERT INTO profile_watches (user_id, profile_id) VALUES (?, ?)',
+                        [(g.user['id'], pid) for pid in sorted(watch)])
+        lead_labels = [label for days, label in LEAD_CHOICES if days in leads]
+        audit.record(con, 'reminders', f'{channels(by_mail, by_push and push.is_configured())}; '
+                     f'vorher: {", ".join(lead_labels) or "nie"}; '
+                     f'überfällig: {dict(OVERDUE_CHOICES)[overdue_days]}; '
+                     f'Profile: {", ".join(family[pid] for pid in family if pid in watch) or "keine"}')
+    flash('Erinnerungen gespeichert.', 'ok')
+
+
+@bp.route('/push/subscribe', methods=['POST'])
+@login_required
+def push_subscribe():
+    """static/push.js sends the browser's subscription here (form fields, so the CSRF check applies).
+    A device belongs to whoever subscribed it last."""
+    if not push.is_configured():
+        abort(404)
+    endpoint, p256dh, auth = (request.form.get(k, '') for k in ('endpoint', 'p256dh', 'auth'))
+    if not push.valid_subscription(endpoint, p256dh, auth):
+        abort(400)
+    with get_db() as con:
+        # Also drops messages still queued for the device's previous owner
+        con.execute('DELETE FROM push_subscriptions WHERE endpoint = ?', (endpoint,))
+        con.execute('INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, created_at) '
+                    'VALUES (?, ?, ?, ?, ?)',
+                    (g.user['id'], endpoint, p256dh, auth, dates.now().isoformat(timespec='seconds')))
+        con.execute('DELETE FROM push_subscriptions WHERE user_id = ? AND id NOT IN '
+                    '(SELECT id FROM push_subscriptions WHERE user_id = ? ORDER BY id DESC LIMIT ?)',
+                    (g.user['id'], g.user['id'], MAX_PUSH_DEVICES))
+        audit.record(con, 'push_enabled', push.service_host(endpoint))
+    return '', 204
+
+
+@bp.route('/push/unsubscribe', methods=['POST'])
+@login_required
+def push_unsubscribe():
+    """The push button switched this device off. Works without push config too, to clean up."""
+    endpoint = request.form.get('endpoint', '')
+    if not endpoint:
+        abort(400)
+    with get_db() as con:
+        if con.execute('DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?',
+                       (g.user['id'], endpoint)).rowcount:
+            audit.record(con, 'push_disabled', push.service_host(endpoint))
+    return '', 204
+
+
+@bp.route('/unsubscribe/<token>', methods=['GET', 'POST'])
+def unsubscribe(token):
+    """Link in every reminder mail. GET only shows a button, so link scanners change nothing."""
+    data = read_unsubscribe_token(token)
+    if data is None or data[1] not in UNSUBSCRIBE:
+        abort(404)
+    user_id, kind = data
+    column, label = UNSUBSCRIBE[kind]
+    user = get_user(user_id)
+    if user is None:
+        abort(404)
+    done = False
+    if request.method == 'POST':
+        with get_db() as con:
+            con.execute(f'UPDATE users SET {column} = 0 WHERE id = ?', (user_id,))
+            audit.record(con, 'unsubscribe', label, user=user)
+        done = True
+    return render_template('unsubscribe.html', label=label, done=done)
 
 
 @bp.route('/verify-email/<token>', methods=['GET', 'POST'])
