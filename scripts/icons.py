@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'helvax' / 'static' / 'icons'
 
-ACCENT = (0x1D, 0x5F, 0xD1, 255)  # --accent in style.css
+ACCENT = (0xC8, 0x10, 0x2E, 255)  # --accent in style.css
 WHITE = (255, 255, 255, 255)
 SCALE = 4  # draw larger, then downscale for smooth edges
 

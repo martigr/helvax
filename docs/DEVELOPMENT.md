@@ -262,7 +262,7 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 
 ## Frontend
 
-- Design tokens in `:root` of `style.css`. Status colours: red = overdue, orange = due, blue = upcoming,
+- Design tokens in `:root` of `style.css`. Status colours: red = overdue, orange = due, red tint = upcoming (accent colour),
   green = complete, grey = not recommended. Print styles (`@media print`) hide navigation and buttons.
 - The footer of logged-in pages shows the version and the disclaimer; logged-out pages show neither.
 - Home screen icons are committed PNGs drawn by `python scripts/icons.py` (needs Pillow) from `_logo.html`.
