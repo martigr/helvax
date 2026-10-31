@@ -89,6 +89,7 @@ class _Part:
     needs_doctor: bool = False
     category: str | None = None
     complete: bool = False
+    started: bool = True  # False: a course that only starts later (decides which reason is shown)
 
 
 def _after(d, duration):
@@ -122,14 +123,13 @@ def _status_for(planned, today, horizon, in_progress, catch_up):
 
 
 def _choose_series(course, birth, day):
-    """The series whose start ages contain `day` (the first dose, or today); before all of them the first,
-    after all of them None."""
+    """The series whose start ages contain `day` (the first dose, or today); in a gap between them
+    (e.g. no catch-up between 1 and 10 years) the next one that starts later; after all of them None."""
     for s in course.series:
         if s.start_age.contains(birth, day):
             return s
-    if day < course.series[0].start_age.start.after(birth):
-        return course.series[0]
-    return None
+    later = [s for s in course.series if s.start_age.start.after(birth) > day]
+    return min(later, key=lambda s: s.start_age.start.after(birth)) if later else None
 
 
 def _evaluate_series_course(rule, course, profile, counted, schedule, today, horizon, warnings):
@@ -143,7 +143,8 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
         return _Part('not_recommended', reason=f'Nur bis {_age_text(course.ages.until)} empfohlen')
     category = series.category or course.category or rule.category
     if category == 'supplementary' and f'optin:{rule.antigen}' not in profile.flags:
-        return _Part('not_recommended', reason='Ergänzende Impfung, im Profil nicht gewählt', category=category)
+        return _Part('not_recommended', reason='Ergänzende Impfung, im Profil nicht gewählt', category=category,
+                     started=today >= start)
 
     # Check the doses already given against the series
     prev = None
@@ -342,9 +343,15 @@ def evaluate_rule(rule, profile, doses, schedule, today, horizon=DEFAULT_HORIZON
             if booster:
                 parts = [p for p in parts if p.status != _LATER or p.next is None] + [booster]
     if rule.seasonal:
-        parts.append(_evaluate_seasonal(rule, profile, valid, today, horizon))
+        if rule.category == 'supplementary' and f'optin:{rule.antigen}' not in profile.flags:
+            parts.append(_Part('not_recommended', reason='Ergänzende Impfung, im Profil nicht gewählt'))
+        else:
+            parts.append(_evaluate_seasonal(rule, profile, valid, today, horizon))
 
-    best = min(parts, key=lambda p: (_RANK[p.status], p.next.recommended if p.next else date.max))
+    # Most urgent first; among parts that are all over, the last one that has started (e.g. "only until 20"
+    # rather than "until 5", but not the opt-in of a course that starts at 65)
+    best = min(reversed(parts), key=lambda p: (_RANK[p.status], p.next.recommended if p.next else date.max,
+                                               not p.started))
     if best.status == 'not_recommended' and any(p.complete for p in parts):
         best = next(p for p in parts if p.complete)
     plan = sorted((d for p in parts if p.status != 'not_recommended' for d in p.plan),
