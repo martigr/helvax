@@ -1,7 +1,7 @@
 """Draw the home screen icons (helvax/static/icons/*.png) from the logo in templates/_logo.html.
 
 The app has no build step, so the PNGs are committed; run this only when the logo or the accent
-colour changes. Needs Pillow, which is not in requirements-dev.txt (scripts/screenshots.py uses it too):
+colour changes. Needs Pillow, which is not in requirements-dev.txt:
 
     pip install pillow
     python scripts/icons.py
@@ -23,7 +23,7 @@ SCALE = 4  # draw larger, then downscale for smooth edges
 
 
 def draw_icon(size, logo_share, rounded):
-    """Accent square with the white washing machine of _logo.html (viewBox 24) in its centre."""
+    """Accent square with the white shield and cross of _logo.html (viewBox 24) in its centre."""
     big = size * SCALE
     img = Image.new('RGBA', (big, big), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -39,16 +39,28 @@ def draw_icon(size, logo_share, rounded):
         return off + x * unit, off + y * unit
 
     stroke = round(1.8 * unit)
-    h = stroke / 2  # SVG strokes are centred on the path, Pillow draws them inside the box
-    x0, y0 = p(4, 2.5)
-    x1, y1 = p(20, 21.5)
-    d.rounded_rectangle((x0 - h, y0 - h, x1 + h, y1 + h), radius=2.5 * unit + h, outline=WHITE, width=stroke)
-    cx, cy = p(12, 13.5)
-    r = 4.5 * unit + h
-    d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=WHITE, width=stroke)
-    for bx0, bx1 in [(7.5, 8.5), (11, 12)]:  # the two buttons: short lines with round caps
-        (ax, ay), (bx, _) = p(bx0, 6), p(bx1, 6)
-        d.rounded_rectangle((ax - h, ay - h, bx + h, ay + h), radius=h, fill=WHITE)
+    h = stroke / 2
+
+    def line(points):
+        """A polyline with round joins and caps, like the SVG stroke."""
+        pts = [p(x, y) for x, y in points]
+        d.line(pts, fill=WHITE, width=stroke, joint='curve')
+        for x, y in pts:
+            d.ellipse((x - h, y - h, x + h, y + h), fill=WHITE)
+
+    # The shield: M12 2.5 l7.5 3 v6 c0 4.6 -3.2 8.6 -7.5 10 c-4.3 -1.4 -7.5 -5.4 -7.5 -10 v-6 z
+    def curve(p0, p1, p2, p3, steps=24):
+        out = []
+        for i in range(steps + 1):
+            t = i / steps
+            out.append(tuple((1 - t) ** 3 * a + 3 * (1 - t) ** 2 * t * b + 3 * (1 - t) * t ** 2 * c + t ** 3 * e
+                             for a, b, c, e in zip(p0, p1, p2, p3, strict=True)))
+        return out
+    right = curve((19.5, 11.5), (19.5, 16.1), (16.3, 20.1), (12, 21.5))
+    left = curve((12, 21.5), (7.7, 20.1), (4.5, 16.1), (4.5, 11.5))
+    line([(12, 2.5), (19.5, 5.5)] + right + left + [(4.5, 5.5), (12, 2.5)])
+    line([(12, 8), (12, 15)])  # the cross
+    line([(8.5, 11.5), (15.5, 11.5)])
     return img.resize((size, size), Image.LANCZOS)
 
 

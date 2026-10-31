@@ -10,6 +10,8 @@
 # ranges are [from, until) ("4–7 Jahre" = [4y, 8y]). Catch-up series (`catch_up: true`) are chosen by
 # the age at the first dose, as in Tab. 2 ("Nachholimpfschemata für ungeimpfte Kinder und Erwachsene");
 # Tab. 2 gives the third dose as "8 months after the first", written here as the interval after the second.
+# Childhood boosters have `skip_from: 16y`: adults don't catch up missed boosters (Tab. 2 Fn. 5), the next
+# dose is the adult booster.
 
 schedule:
   id: ch-2026
@@ -67,46 +69,46 @@ rules:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [3m, 6m]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [6m, 12m]
             catch_up: true
             doses:
               - {}
               - {after: 1m, min_interval: 4w}
               - {after: 7m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [12m, 4y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [4y, 8y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [8y, 11y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [11y, null]
             catch_up: true
             doses:
@@ -145,46 +147,46 @@ rules:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [3m, 6m]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [6m, 12m]
             catch_up: true
             doses:
               - {}
               - {after: 1m, min_interval: 4w}
               - {after: 7m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [12m, 4y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [4y, 8y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           # Tab. 2: 8–10 years 0 (dTpa), 2 (dTpa), 8 (dT without pertussis), 11–15 (dTpa)
           - start_age: [8y, 11y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: skip, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           # Tab. 2: 11–24 years only the first dose with pertussis (dTpa), then 25 years (dTpa)
           - start_age: [11y, 25y]
             catch_up: true
@@ -212,35 +214,35 @@ rules:
               - {at: 2m, min_age: 6w}
               - {at: 4m, min_interval: 4w}
               - {at: 12m, min_age: 11m, min_interval: 6m, overdue_after: 13m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
           - start_age: [3m, 6m]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
           - start_age: [6m, 12m]
             catch_up: true
             doses:
               - {}
               - {after: 1m, min_interval: 4w}
               - {after: 7m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
           - start_age: [12m, 4y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 4–7 Jahre}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 4–7 Jahre}
           - start_age: [4y, 11y]
             catch_up: true
             doses:
               - {}
               - {after: 2m, min_interval: 4w}
               - {after: 6m, min_interval: 6m}
-              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, label: Auffrischimpfung 11–15 Jahre}
+              - {window: [11y, 16y], min_interval: 2y, if_missed: doctor, skip_from: 16y, label: Auffrischimpfung 11–15 Jahre}
           - start_age: [11y, null]
             catch_up: true
             doses:

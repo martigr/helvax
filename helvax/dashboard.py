@@ -21,9 +21,9 @@ def index():
         cards.append({'profile': p, 'age': dates.age_label(birth, today), 'counts': counts,
                       'worst': actionable[0].status if actionable else 'complete',
                       'entries': len(record[0]), 'doctor': any(s.needs_doctor for s in statuses)})
-        upcoming += [{'profile': p, 'status': s} for s in actionable]
+        upcoming += [{'profile': p, **group} for group in profiles.group_actionable(statuses)]
     order = {s: i for i, s in enumerate(engine.STATUSES)}
-    upcoming.sort(key=lambda u: (order[u['status'].status], u['status'].next.recommended))
+    upcoming.sort(key=lambda u: (order[u['status']], u['first'].next.recommended))
     return render_template('dashboard.html', cards=cards, upcoming=upcoming, today=today,
                            has_family=g.user['family_id'] is not None)
 

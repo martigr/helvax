@@ -127,8 +127,10 @@ def test_combination_vaccine_covers_its_antigens(client, csrf, query, profile):
     page = client.get(f'/profiles/{profile}').get_data(as_text=True)
     assert 'Infanrix hexa' in page and 'A21CB' in page
     assert 'Diphtherie <span class="dose-no">1</span>' in page
-    # Every antigen of the vaccine moved on to dose 2; pneumococci (not in it) still wait for dose 1
-    assert page.count('2. Dosis: ') == 6
+    # Every antigen of the vaccine moved on to dose 2, shown as one group; pneumococci (not in it) wait for dose 1
+    assert page.count('2. Dosis: ') == 1
+    assert ('<strong>Diphtherie, Tetanus, Pertussis (Keuchhusten), Kinderlähmung (Polio), '
+            'Haemophilus influenzae Typ b, Hepatitis B</strong>') in page
     assert 'Pneumokokken</strong> <span class="status-badge status-overdue">' in page
 
 

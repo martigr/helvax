@@ -34,6 +34,10 @@ Page numbers refer to the PDF. Nothing here is medical advice.
   window has passed without the dose, helvax shows "Nachholschema mit Ärztin/Arzt festlegen".
 - **Second dose before 4 months** (S. 8: then a third dose one month later and a fourth at 12 months) and
   infants vaccinated by the rules before 2019 (third dose at 6 months, S. 9) are not modelled.
+- **Adults don't catch up missed childhood boosters** (`skip_from: 16y` on the 4–7 and 11–15 boosters of
+  `dip`, `tet`, `pert`, `polio`): from 16 these slots are dropped, and a later dose counts as an adult booster.
+  Based on Tab. 2 Fn. 5 ("Das Nachholen von in der Vergangenheit nicht erfolgten Auffrischimpfungen ist nicht
+  erforderlich") and Tab. 4 (not modelled in detail). Children under 16 who missed a booster get the doctor hint.
 - **Minimum interval of 2 years** before the 4–7 and the 11–15 boosters is taken from Tab. 2 Fn. 3 and applied
   to the routine schedule as well.
 - **Shorter booster intervals** for immunodeficiency, travel or exposure (S. 6 Fn. 13) are not modelled.

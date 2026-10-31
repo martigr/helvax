@@ -49,6 +49,8 @@ class DoseSpec:
     overdue_after: Duration | None = None  # age; default: end of window, or recommended + grace
     until: Duration | None = None         # not given from this age on
     if_missed: str = 'overdue'            # when `until`/the window passed: overdue | skip (series ends) | doctor
+    skip_from: Duration | None = None     # from this age the dose is no longer part of the series (e.g. childhood
+                                          # boosters for adults); a dose given at that age counts as a later one
     label: str = ''
 
 
@@ -211,7 +213,7 @@ def _date(where, value):
 
 def _dose(where, d):
     _keys(where, d, ['at', 'window', 'after', 'min_age', 'min_interval', 'overdue_after', 'until', 'if_missed',
-                     'label'])
+                     'skip_from', 'label'])
     timing = [k for k in ('at', 'window', 'after') if d.get(k) is not None]
     if len(timing) > 1:
         raise ScheduleError(f'{where}: use only one of at, window, after')
@@ -221,7 +223,8 @@ def _dose(where, d):
                     after=_dur(where, d.get('after')), min_age=_dur(where, d.get('min_age')),
                     min_interval=_dur(where, d.get('min_interval')),
                     overdue_after=_dur(where, d.get('overdue_after')), until=_dur(where, d.get('until')),
-                    if_missed=d.get('if_missed', 'overdue'), label=str(d.get('label', '')))
+                    if_missed=d.get('if_missed', 'overdue'), skip_from=_dur(where, d.get('skip_from')),
+                    label=str(d.get('label', '')))
 
 
 def _series(where, s):

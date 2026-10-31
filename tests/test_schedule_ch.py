@@ -274,3 +274,21 @@ def test_complete_childhood_record_shows_nothing_to_do_until_the_next_booster():
     assert [(s.antigen, s.status) for s in actionable] == []
     assert {a for a, s in r.items() if s.status == 'complete'} == \
         set(HEXA) | {'pcv', 'hpv'} | set(MMRV)
+
+
+def test_adult_with_primary_series_and_a_late_booster():
+    """Infant series, no childhood boosters, a dT dose at 50: no childhood catch-up for adults (Tab. 2 Fn. 5);
+    the dose at 50 is the adult booster, the next one 20 years later."""
+    birth = D(1958, 3, 31)
+    doses = entries((D(1958, 6, 30), DT), (D(1958, 8, 31), DT), (D(1959, 5, 31), DT), (D(2008, 3, 31), DT),
+                    (D(1965, 3, 31), ('polio',)), (D(1965, 5, 31), ('polio',)), (D(1966, 3, 31), ('polio',)))
+    r = evaluate(birth, doses)
+    assert (r['tet'].status, r['tet'].needs_doctor, r['tet'].next.recommended) == ('complete', False, D(2028, 3, 31))
+    assert (r['polio'].status, r['polio'].next) == ('complete', None)
+
+
+def test_adult_with_only_the_primary_series_needs_a_booster():
+    birth = D(1986, 5, 1)
+    doses = entries((D(1986, 7, 1), DT), (D(1986, 9, 1), DT), (D(1987, 5, 1), DT))
+    r = evaluate(birth, doses)
+    assert (r['tet'].status, r['tet'].needs_doctor, r['tet'].next.recommended) == ('overdue', False, D(2011, 5, 1))

@@ -243,3 +243,13 @@ def test_summary_orders_by_urgency():
     assert [(s.antigen, s.status) for s in actionable] == [
         ('dt', 'overdue'), ('pol', 'overdue'), ('hib', 'overdue'),  # oldest recommended date first
         ('mmr', 'due'), ('rsv', 'due')]
+
+
+def test_childhood_booster_is_skipped_for_adults():
+    """`skip_from`: a dose given as an adult doesn't fill a missed childhood booster slot."""
+    birth = D(1990, 1, 1)
+    r = status('pol', birth, doses_of('pol', D(1990, 3, 1)), D(2006, 1, 1))
+    assert (r.status, r.needs_doctor) == ('complete', False)  # 16 now: the 4–7 booster is no longer asked for
+    r = status('pol', birth, doses_of('pol', D(1990, 3, 1), D(2020, 1, 1)), D(2026, 10, 15))
+    assert r.status == 'complete'
+    assert r.doses[1].number == 2  # still counted

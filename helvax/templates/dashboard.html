@@ -31,10 +31,10 @@
       <li>
         <a href="{{ url_for('profiles.show', profile_id=u.profile['id']) }}#status">
           <span class="due-who">{{ u.profile['display_name'] }}</span>
-          <span class="due-what">{{ u.status.label }} <span class="hint">· {{ dose_label(u.status) }}</span></span>
-          <span class="due-when hint">{{ next_text(u.status) }}{% if u.status.needs_doctor %} · Nachholschema mit Ärztin/Arzt{% endif %}</span>
+          <span class="due-what">{{ u.labels|join(', ') }} <span class="hint">· {{ dose_label(u.first) }}</span></span>
+          <span class="due-when hint">{{ next_text(u.first) }}{% if u.first.needs_doctor %} · Nachholschema mit Ärztin/Arzt{% endif %}</span>
         </a>
-        {{ badge(u.status.status) }}
+        {{ badge(u.status) }}
       </li>
       {% endfor %}
     </ul>

@@ -146,23 +146,34 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
         return _Part('not_recommended', reason='Ergänzende Impfung, im Profil nicht gewählt', category=category,
                      started=today >= start)
 
-    # Check the doses already given against the series
+    # Match the doses already given to the series, and check them. A dose given at or after a slot's
+    # `skip_from` age doesn't fill it: the slot is dropped (e.g. a childhood booster for an adult).
     prev = None
-    for spec, d in zip(series.doses, given, strict=False):
+    specs = list(series.doses)
+    i = 0
+    for d in given:
+        while i < len(specs) and specs[i].skip_from and d.date >= specs[i].skip_from.after(birth):
+            specs.pop(i)
+        if i >= len(specs):
+            break
+        spec = specs[i]
         if spec.min_age and d.date < spec.min_age.after(birth):
             warnings.append(f'Dosis {d.number} vom {d.date:%d.%m.%Y} wurde jünger als {spec.min_age.label()} gegeben.')
         if prev and spec.min_interval and d.date < spec.min_interval.after(prev):
             warnings.append(f'Dosis {d.number} vom {d.date:%d.%m.%Y}: weniger als {spec.min_interval.label()} '
                             f'nach der vorherigen Dosis.')
         prev = d.date
-    if len(given) >= len(series.doses):
+        i += 1
+    filled = i
+    remaining = [s for s in specs[filled:] if not (s.skip_from and today >= s.skip_from.after(birth))]
+    if not remaining:
         return _Part('complete', category=category, complete=True)
 
     first_number = (given[-1].number if given else len(counted)) + 1
     plan = []
     prev = given[-1].date if given else None  # date of the previous dose: given, or planned (but not before today)
     part = None
-    for i, spec in enumerate(series.doses[len(given):]):
+    for i, spec in enumerate(remaining):
         earliest = max(_after(birth, spec.min_age), start)
         if plan:
             earliest = max(earliest, prev)

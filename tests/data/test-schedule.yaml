@@ -166,7 +166,7 @@ rules:
           - start_age: [0d, null]
             doses:
               - {at: 2m}
-              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor}
+              - {window: [4y, 8y], min_interval: 2y, if_missed: doctor, skip_from: 16y}
 
   # Series by age at the first dose, one of them supplementary
   - antigen: hpv

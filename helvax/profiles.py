@@ -109,6 +109,17 @@ def record_rows(vaccinations, antigens, numbers):
     return rows
 
 
+def group_actionable(statuses):
+    """Due/upcoming statuses with the same next dose (e.g. the antigens of one combination vaccine) as one
+    group: [{'status', 'labels', 'first'}], most urgent first."""
+    groups = {}
+    for s in engine.summary(statuses):
+        key = (s.status, s.next.recommended, s.next.latest, s.next.asap, s.next.label, s.needs_doctor)
+        groups.setdefault(key, []).append(s)
+    return [{'status': items[0].status, 'labels': [s.label for s in items], 'first': items[0],
+             'antigens': [s.antigen for s in items]} for items in groups.values()]
+
+
 # --- Profiles ------------------------------------------------------------------------------------
 
 def parse_profile_form(form):
@@ -168,7 +179,8 @@ def show(profile_id):
     vaccinations, antigens, immunities, flags = record
     schedule = rules.schedule()
     return render_template('profile.html', profile=profile, birth=dates.parse_day(profile['birth_date']),
-                           statuses=statuses, rows=record_rows(vaccinations, antigens, numbers),
+                           statuses=statuses, groups=group_actionable(statuses),
+                           rows=record_rows(vaccinations, antigens, numbers),
                            immunities=immunities, immunity_kinds=IMMUNITY_KINDS, schedule=schedule,
                            active_flags=[schedule.flags[f] for f in sorted(flags) if f in schedule.flags],
                            today=dates.today(), max_note=MAX_NOTE)

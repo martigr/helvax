@@ -14,7 +14,6 @@
   </div>
 </div>
 
-{% set action = statuses|selectattr('status', 'in', ['overdue', 'due', 'upcoming'])|list %}
 {% set done = statuses|selectattr('status', 'equalto', 'complete')|list %}
 {% set other = statuses|selectattr('status', 'equalto', 'not_recommended')|list %}
 
@@ -24,17 +23,17 @@
   {% if active_flags %}
   <p class="hint" style="margin:0">Berücksichtigt: {{ active_flags|map(attribute='label')|join('; ') }}.</p>
   {% endif %}
-  {% if action %}
+  {% if groups %}
   <ul class="status-list">
-    {% for s in action|sort(attribute='next.recommended') %}
-    <li class="status-item status-item-{{ s.status }}">
-      <div class="status-head"><strong>{{ s.label }}</strong> {{ badge(s.status) }}</div>
+    {% for grp in groups %}{% set s = grp.first %}
+    <li class="status-item status-item-{{ grp.status }}">
+      <div class="status-head"><strong>{{ grp.labels|join(', ') }}</strong> {{ badge(grp.status) }}</div>
       <div>{{ dose_label(s) }}: {{ next_text(s) }}</div>
       {% if s.needs_doctor %}<div class="doctor">{{ s.reason }}</div>{% endif %}
       {% if s.plan|length > 1 and not s.needs_doctor %}
       <div class="hint">Danach: {% for d in s.plan[1:] %}{{ d.label or (d.number ~ '. Dosis') }} {{ d.recommended|date }}{{ ', ' if not loop.last }}{% endfor %}</div>
       {% endif %}
-      {% for w in s.warnings %}<div class="hint warn-text">{{ w }}</div>{% endfor %}
+      {% for a in grp.antigens %}{% for st in statuses if st.antigen == a %}{% for w in st.warnings %}<div class="hint warn-text">{{ st.label }}: {{ w }}</div>{% endfor %}{% endfor %}{% endfor %}
     </li>
     {% endfor %}
   </ul>

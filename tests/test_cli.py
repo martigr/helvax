@@ -23,6 +23,8 @@ def test_seed_demo_is_idempotent(app, query):
     assert query("SELECT username FROM users WHERE username IN ('anna', 'ben') ORDER BY username") == [
         ('anna',), ('ben',)]
     assert query("SELECT COUNT(*) FROM families WHERE name = 'Familie Muster'") == [(1,)]
+    assert query("SELECT display_name FROM profiles ORDER BY id") == [('Lena',), ('Noah',), ('Anna',), ('Erika',)]
+    assert query('SELECT COUNT(*) FROM vaccinations')[0][0] > 20
 
 
 def test_first_admin_from_config(tmp_path):
