@@ -24,6 +24,9 @@ Page numbers refer to the PDF. Nothing here is medical advice.
    Tab. 2 gives none.
 5. **Dose numbers** count every dose of an antigen in order of date; a dose number typed in by hand
    (`dose_override`) is only shown, not used for the calculation.
+6. **Incomplete records:** when childhood doses are missing from the booklet, helvax treats the person as
+   unvaccinated and applies the catch-up series (e.g. an adult with only a dTpa at 25 and a dT at 45 gets a
+   "third dose" instead of the next booster at 65). Should the app say "Ausweis unvollständig" instead?
 
 ## Diphtheria, tetanus (`dip`, `tet`)
 
@@ -74,6 +77,8 @@ Page numbers refer to the PDF. Nothing here is medical advice.
 - From 65: one dose, unless already vaccinated with PCV20/PCV21 at 65 or later. Previous PCV13, PCV15 or PPV23
   doses lead to different recommendations (S. 16). helvax doesn't know the product valency yet and treats
   any PCV dose from 65 on as the one dose.
+- Infant third dose: no minimum interval to the second dose either (the catch-up series use 6 months), so the
+  earliest date shown is the birth date.
 
 ## Meningococci ACWY (`menacwy`)
 
@@ -121,6 +126,8 @@ Page numbers refer to the PDF. Nothing here is medical advice.
   flag "FSME-Risikogebiet".
 - Interval between the 2nd and 3rd dose depends on the vaccine (5–12 months after the second); helvax uses
   5 months. The accelerated schema (14 days between the first two doses) is accepted as the minimum.
+  With `overdue_grace` the third dose is overdue 6 months after the second, although some vaccines allow up to
+  12 months.
 - Children aged 1–2: individual decision, not computed (recommended from 3 years).
 
 ## Not modelled at all (yet)
