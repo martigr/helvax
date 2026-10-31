@@ -39,6 +39,7 @@ class Dose:
     date: date
     antigen: str
     ref: object = None  # e.g. the vaccination entry id; passed through to the result
+    product: frozenset | None = None  # tags of the product (catalogue); None = product unknown
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,7 @@ class CountedDose:
     number: int | None     # None = given, but not counted (e.g. before the minimum age)
     ref: object = None
     warning: str | None = None
+    product: frozenset | None = None
 
 
 @dataclass(frozen=True)
@@ -122,6 +124,14 @@ def _status_for(planned, today, horizon, in_progress, catch_up):
     return _LATER
 
 
+UNKNOWN_PRODUCT = 'Impfstoff unbekannt'
+
+
+def _has_tag(dose, tags):
+    """True/False whether the dose's product has one of `tags`; None if the product is unknown."""
+    return None if dose.product is None else bool(dose.product & tags)
+
+
 def _choose_series(course, birth, day):
     """The series whose start ages contain `day` (the first dose, or today); in a gap between them
     (e.g. no catch-up between 1 and 10 years) the next one that starts later; after all of them None."""
@@ -148,15 +158,40 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
 
     # Match the doses already given to the series, and check them. A dose given at or after a slot's
     # `skip_from` age doesn't fill it: the slot is dropped (e.g. a childhood booster for an adult).
+    # A slot with `if_previous_product` is dropped unless the previous dose was such a product; a slot with
+    # `products` is only filled by such a product (a dose of an unknown product fills it, with a warning).
     prev = None
+    last = None  # the previous dose, filling a slot or passed over
     specs = list(series.doses)
     i = 0
+
+    def drop_conditional(i, previous):
+        while i < len(specs) and specs[i].if_previous_product:
+            needed = _has_tag(previous, specs[i].if_previous_product) if previous else False
+            if needed:
+                break
+            if needed is None:
+                warnings.append(f'Dosis {previous.number} vom {previous.date:%d.%m.%Y}: {UNKNOWN_PRODUCT}; '
+                                f'ob eine weitere Dosis nötig ist, hängt vom Impfstoff ab.')
+            specs.pop(i)
+
     for d in given:
         while i < len(specs) and specs[i].skip_from and d.date >= specs[i].skip_from.after(birth):
             specs.pop(i)
+        if last is not None:
+            drop_conditional(i, last)
         if i >= len(specs):
             break
         spec = specs[i]
+        last = d
+        if spec.products:
+            matches = _has_tag(d, spec.products)
+            if matches is False:
+                prev = d.date
+                continue
+            if matches is None:
+                warnings.append(f'Dosis {d.number} vom {d.date:%d.%m.%Y}: {UNKNOWN_PRODUCT}; zählt als passende '
+                                f'Dosis, bitte prüfen.')
         if spec.min_age and d.date < spec.min_age.after(birth):
             warnings.append(f'Dosis {d.number} vom {d.date:%d.%m.%Y} wurde jünger als {spec.min_age.label()} gegeben.')
         if prev and spec.min_interval and d.date < spec.min_interval.after(prev):
@@ -165,7 +200,12 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
         prev = d.date
         i += 1
     filled = i
-    remaining = [s for s in specs[filled:] if not (s.skip_from and today >= s.skip_from.after(birth))]
+    if last is not None and filled < len(specs):
+        drop_conditional(filled, last)
+    # Conditional slots after a planned dose: the product isn't known yet, so they aren't planned
+    remaining = [s for k, s in enumerate(specs[filled:])
+                 if not (s.skip_from and today >= s.skip_from.after(birth))
+                 and not (s.if_previous_product and (k > 0 or last is None))]
     if not remaining:
         return _Part('complete', category=category, complete=True)
 
@@ -213,7 +253,7 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
                 return _Part('not_recommended', reason=reason, category=category)
             if spec.if_missed == 'doctor' and latest is not None and today > latest:
                 return _Part('overdue', next=planned, reason=DOCTOR, needs_doctor=True, category=category)
-            status = _status_for(planned, today, horizon, in_progress=bool(given), catch_up=series.catch_up)
+            status = _status_for(planned, today, horizon, in_progress=filled > 0, catch_up=series.catch_up)
             part = _Part(status, next=planned, category=category,
                          reason=f'Empfohlen ab {planned.recommended:%d.%m.%Y}' if status == _LATER else None)
         elif deadline is not None and planned.recommended >= deadline:
@@ -315,10 +355,11 @@ def evaluate_rule(rule, profile, doses, schedule, today, horizon=DEFAULT_HORIZON
     for d in doses:
         if rule.not_counted_before and d.date < rule.not_counted_before.after(birth):
             counted.append(CountedDose(d.date, None, d.ref,
-                                       f'Zählt nicht: jünger als {rule.not_counted_before.label()} gegeben.'))
+                                       f'Zählt nicht: jünger als {rule.not_counted_before.label()} gegeben.',
+                                       d.product))
             continue
         number += 1
-        counted.append(CountedDose(d.date, number, d.ref))
+        counted.append(CountedDose(d.date, number, d.ref, product=d.product))
     valid = [c for c in counted if c.number is not None]
     warnings += [c.warning for c in counted if c.warning]
 

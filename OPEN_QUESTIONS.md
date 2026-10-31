@@ -27,6 +27,8 @@ Page numbers refer to the PDF. Nothing here is medical advice.
 6. **Incomplete records:** when childhood doses are missing from the booklet, helvax treats the person as
    unvaccinated and applies the catch-up series (e.g. an adult with only a dTpa at 25 and a dT at 45 gets a
    "third dose" instead of the next booster at 65). Should the app say "Ausweis unvollständig" instead?
+7. **Unknown product** ("Anderer Impfstoff"): where a rule depends on the vaccine (MenACWY at 12–23 months,
+   PCV from 65), the dose counts like the product that needs no further dose, with a warning to check it.
 
 ## Diphtheria, tetanus (`dip`, `tet`)
 
@@ -74,15 +76,20 @@ Page numbers refer to the PDF. Nothing here is medical advice.
 
 - Infant third dose: the schedule says "before 13 months" for DTPa-IPV-Hib-HBV and PCV; the minimum age of
   11 months is only stated for the hexavalent vaccine, so helvax uses none for PCV.
-- From 65: one dose, unless already vaccinated with PCV20/PCV21 at 65 or later. Previous PCV13, PCV15 or PPV23
-  doses lead to different recommendations (S. 16). helvax doesn't know the product valency yet and treats
-  any PCV dose from 65 on as the one dose.
+- From 65: one dose of PCV20 or PCV21 (S. 16). A PCV13 or PCV15 dose given from 65 doesn't count; the
+  higher-valent dose follows at least 1 year later. After PCV15, S. 16 names only PCV21; helvax accepts PCV20
+  too (the rule only knows "PCV20 or PCV21"). Doses before 65 (risk persons) don't count for the dose from 65,
+  following "im Alter von ≥ 65 Jahren erhalten". PPV23 can't be recorded (see the product catalogue).
 - Infant third dose: no minimum interval to the second dose either (the catch-up series use 6 months), so the
   earliest date shown is the birth date.
 
 ## Meningococci ACWY (`menacwy`)
 
-- 12–23 months: 1 or 2 doses depending on the vaccine (S. 12 j), Tab. 2 Fn. 19). helvax models 1 dose.
+- 12–23 months: 1 or 2 doses depending on the vaccine (S. 12 j), Tab. 2 Fn. 19 on S. 19); S. 26 Fn. ** names them:
+  Menveo 2 doses, MenQuadfi 1. helvax asks for a second dose after Menveo, 2 months later, at least 2 months
+  (S. 12 j); S. 26 says "minimal 1 Monat" for risk groups). This applies when the first dose was given at 12–23
+  months, also in the catch-up; from 24 months 1 dose. Nimenrix (not authorised in Switzerland) counts as 1
+  dose.
 
 ## Varicella (`varicella`)
 
@@ -156,6 +163,6 @@ reimbursed products (Gardasil 9, for instance, is missing there because the cant
   vaccines Abrysvo, Arexvy and mResvia (`rsv` means the antibody for infants), MenC (NeisVac-C), hepatitis A
   and travel vaccines. Such doses can't be recorded yet, because an entry needs at least one antigen; that
   matters for PCV from 65, where a previous PPV23, PCV13 or PCV15 dose changes the recommendation (S. 16).
-- **Product-dependent rules not using the product yet:** MenACWY at 12–23 months (MenQuadfi 1 dose, Menveo
-  2 doses, S. 26), PCV valency from 65 (S. 16), HBV 11–15 adult or children's dose (Engerix-B 10/20 and HBVAXPRO
-  10/40 are one entry each; Tab. 2 Fn. 11).
+- **Product-dependent rules:** MenACWY at 12–23 months and PCV from 65 use the `tags` of the products. Not
+  yet: HBV 11–15 adult or children's dose (Engerix-B 10/20 and HBVAXPRO 10/40 are one entry each; Tab. 2
+  Fn. 11).

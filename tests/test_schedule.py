@@ -57,11 +57,19 @@ def mutate(change):
     (lambda d: d['rules'].append(dict(rule(d, 'hib'))), "a second rule for 'hib'"),
     (lambda d: d['flags'].update({'optin:x': {'label': 'x'}}), 'opt-in flags are generated'),
     (lambda d: rule(d, 'flu').pop('seasonal'), 'a rule needs courses or seasonal'),
+    (lambda d: rule(d, 'pnc')['courses'][0]['series'][0]['doses'][0].update(products='high'),
+     'products: expected a list of product tags'),
+    (lambda d: rule(d, 'acw')['courses'][0]['series'][0]['doses'][1].update(if_previous_product=[]),
+     'if_previous_product: expected a list of product tags'),
 ])
 def test_invalid_files_are_rejected(change, message):
     with pytest.raises(schedule.ScheduleError, match=message.replace('(', r'\(').replace(')', r'\)')
                        .replace('[', r'\[').replace(']', r'\]')):
         schedule.parse(mutate(change))
+
+
+def test_product_tags_of_the_rules():
+    assert schedule.load(TEST_FILE).product_tags == {'two', 'high'}
 
 
 def test_error_names_the_file(tmp_path):

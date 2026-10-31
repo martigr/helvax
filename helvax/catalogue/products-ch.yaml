@@ -11,7 +11,8 @@
 # hepatitis A, MenC, travel vaccines) are left out: an entry needs at least one antigen and would count wrongly.
 # Anything missing: "Anderer Impfstoff" with manually chosen antigens.
 #
-# group: heading in the list; valency: for pneumococcal vaccines (PCV13, PCV15, ...), not used yet.
+# group: heading in the list; tags: for rules that depend on the product (`products` and `if_previous_product`
+# in the schedule): the valency of pneumococcal vaccines (S. 16) and the MenACWY vaccine at 12–23 months (S. 26).
 
 products:
   # Combination vaccines for infants and children
@@ -35,14 +36,14 @@ products:
   - {key: varivax, name: Varivax, group: "Masern, Mumps, Röteln, Windpocken", antigens: [varicella]}
   - {key: varilrix, name: Varilrix, group: "Masern, Mumps, Röteln, Windpocken", antigens: [varicella]}
   # Pneumococci (conjugate vaccines only; PPV23 is a polysaccharide vaccine and doesn't count as PCV, S. 16)
-  - {key: prevenar-13, name: Prevenar 13, group: Pneumokokken, antigens: [pcv], valency: 13}
-  - {key: vaxneuvance, name: Vaxneuvance (PCV15), group: Pneumokokken, antigens: [pcv], valency: 15}
-  - {key: prevenar-20, name: Prevenar 20, group: Pneumokokken, antigens: [pcv], valency: 20}
-  - {key: capvaxive, name: Capvaxive (PCV21), group: Pneumokokken, antigens: [pcv], valency: 21}
+  - {key: prevenar-13, name: Prevenar 13, group: Pneumokokken, antigens: [pcv], tags: [pcv13]}
+  - {key: vaxneuvance, name: Vaxneuvance (PCV15), group: Pneumokokken, antigens: [pcv], tags: [pcv15]}
+  - {key: prevenar-20, name: Prevenar 20, group: Pneumokokken, antigens: [pcv], tags: [pcv20]}
+  - {key: capvaxive, name: Capvaxive (PCV21), group: Pneumokokken, antigens: [pcv], tags: [pcv21]}
   # Meningococci
   - {key: bexsero, name: Bexsero (MenB), group: Meningokokken, antigens: [menb]}
-  - {key: menquadfi, name: MenQuadfi (MenACWY), group: Meningokokken, antigens: [menacwy]}
-  - {key: menveo, name: Menveo (MenACWY), group: Meningokokken, antigens: [menacwy]}
+  - {key: menquadfi, name: MenQuadfi (MenACWY), group: Meningokokken, antigens: [menacwy], tags: [menquadfi]}
+  - {key: menveo, name: Menveo (MenACWY), group: Meningokokken, antigens: [menacwy], tags: [menveo]}
   # Hepatitis B (Engerix-B 10/20 and HBVAXPRO 10/40 are one entry each; the dose isn't used yet)
   - {key: engerix-b, name: Engerix-B, group: Hepatitis B, antigens: [hbv]}
   - {key: hbvaxpro, name: HBVAXPRO, group: Hepatitis B, antigens: [hbv]}
@@ -65,5 +66,5 @@ products:
   - {key: hexyon, name: Hexyon, group: Nicht in der Schweiz zugelassen, antigens: [dip, tet, pert, polio, hib, hbv]}
   - {key: td-pur, name: Td-pur (dT), group: Nicht in der Schweiz zugelassen, antigens: [dip, tet]}
   - {key: rotateq, name: RotaTeq, group: Nicht in der Schweiz zugelassen, antigens: [rota]}
-  - {key: nimenrix, name: Nimenrix (MenACWY), group: Nicht in der Schweiz zugelassen, antigens: [menacwy]}
+  - {key: nimenrix, name: Nimenrix (MenACWY), group: Nicht in der Schweiz zugelassen, antigens: [menacwy], tags: [nimenrix]}
   - {key: trumenba, name: Trumenba (MenB), group: Nicht in der Schweiz zugelassen, antigens: [menb]}

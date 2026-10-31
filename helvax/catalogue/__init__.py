@@ -1,6 +1,7 @@
 """The product catalogue: vaccine trade names and the antigens they cover (catalogue/products-ch.yaml).
 
-Checked against the schedule at startup: every antigen of a product must be one of the schedule's.
+Checked against the schedule at startup: every antigen of a product must be one of the schedule's, and every
+product tag the schedule's rules refer to (`products`, `if_previous_product`) must be on some product.
 """
 import os
 from dataclasses import dataclass
@@ -18,7 +19,7 @@ class Product:
     name: str
     group: str
     antigens: tuple
-    valency: int | None = None
+    tags: frozenset = frozenset()  # for product-dependent rules, e.g. menveo, pcv13
 
 
 class Catalogue:
@@ -45,9 +46,9 @@ def parse(data, schedule):
         where = f'products[{i}]'
         if not isinstance(p, dict):
             raise ScheduleError(f'{where}: expected a mapping')
-        unknown = set(p) - {'key', 'name', 'group', 'antigens', 'valency'}
+        unknown = set(p) - {'key', 'name', 'group', 'antigens', 'tags'}
         if unknown or not {'key', 'name', 'group', 'antigens'} <= set(p):
-            raise ScheduleError(f'{where}: needs key, name, group, antigens (and optionally valency)')
+            raise ScheduleError(f'{where}: needs key, name, group, antigens (and optionally tags)')
         if p['key'] in seen:
             raise ScheduleError(f'{where}: duplicate key {p["key"]!r}')
         seen.add(p['key'])
@@ -55,7 +56,14 @@ def parse(data, schedule):
         missing = [a for a in antigens if a not in schedule.antigens]
         if not antigens or missing:
             raise ScheduleError(f'{where} ({p["name"]}): unknown antigen(s) {", ".join(missing) or "(none)"}')
-        products.append(Product(str(p['key']), str(p['name']), str(p['group']), antigens, p.get('valency')))
+        tags = p.get('tags') or []
+        if not isinstance(tags, list) or not all(isinstance(t, str) and t for t in tags):
+            raise ScheduleError(f'{where} ({p["name"]}): tags must be a list of names')
+        products.append(Product(str(p['key']), str(p['name']), str(p['group']), antigens, frozenset(tags)))
+    known = {t for p in products for t in p.tags}
+    missing = sorted(schedule.product_tags - known)
+    if missing:
+        raise ScheduleError(f'the schedule refers to product tag(s) no product has: {", ".join(missing)}')
     return Catalogue(products)
 
 

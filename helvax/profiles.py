@@ -79,13 +79,20 @@ def load_record(profile):
     return vaccinations, antigens, immunities, profile_flags(profile['id'])
 
 
+def _product_tags(catalogue, vaccination):
+    """The tags of the entry's catalogue product; None for "Anderer Impfstoff" or a product no longer listed."""
+    product = catalogue.get(vaccination['product_key']) if vaccination['product_key'] else None
+    return product.tags if product else None
+
+
 def evaluate(profile, record=None):
     """(statuses, dose numbers, record) of a profile, for today."""
     vaccinations, antigens, immunities, flags = record or load_record(profile)
     schedule = rules.schedule()
     engine_profile = engine.Profile(dates.parse_day(profile['birth_date']), frozenset(flags),
                                     frozenset(i['antigen'] for i in immunities))
-    doses = [engine.Dose(dates.parse_day(v['date']), a['antigen'], v['id'])
+    catalogue = rules.catalogue()
+    doses = [engine.Dose(dates.parse_day(v['date']), a['antigen'], v['id'], _product_tags(catalogue, v))
              for v in vaccinations for a in antigens.get(v['id'], []) if a['antigen'] in schedule.rules]
     statuses = engine.evaluate(engine_profile, doses, schedule, dates.today())
     numbers = engine.number_doses(engine_profile, doses, schedule)
