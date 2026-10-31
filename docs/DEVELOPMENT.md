@@ -296,4 +296,9 @@ When the BAG publishes a new schedule (usually in the first quarter):
    page references, and update `OPEN_QUESTIONS.md`.
 3. Point `SCHEDULE_FILE`'s default in `__init__.py` to the new file; adjust `tests/test_schedule_ch.py`.
 4. The catalogue (`products-ch.yaml`) needs updates when vaccines come and go; keep old products, old records
-   name them.
+   name them (unauthorised ones go into the group «Nicht in der Schweiz zugelassen»). Check it against the
+   Swissmedic list "Zugelassene Humanarzneimittel" (Excel, column "Heilmittelcode" = `Impfstoffe`, plus the RSV
+   antibodies) at https://www.swissmedic.ch/swissmedic/de/home/services/listen_neu.html, and the antigens against
+   the ingredients in the SL: `https://epl.bag.admin.ch/api/sl/public/medicinal-products?page=1&size=100&search=<name>`
+   (public JSON, IT code `08.08.` = vaccines; the SL only lists reimbursed products). Record the date of the
+   check in the file header and in `OPEN_QUESTIONS.md`.

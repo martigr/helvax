@@ -132,7 +132,23 @@ Page numbers refer to the PDF. Nothing here is medical advice.
 
 ## Product catalogue
 
-`helvax/catalogue/products-ch.yaml` maps trade names to antigens from general knowledge of the vaccines on the
-Swiss market, not from the BAG schedule. Please check it against the Spezialitätenliste
-(https://sl.bag.admin.ch/sl) or the product information. Product-dependent rules (MenACWY 1 or 2 doses, PCV
-valency, HBV schema) don't use the product yet.
+`helvax/catalogue/products-ch.yaml` maps trade names to antigens. It is not from the BAG schedule. Checked on
+2026-10-31 against the Swissmedic list of authorised human medicines (as of 2026-09-30) and the
+Spezialitätenliste (SL, IT code 08.08); antigens follow the ingredients listed there. The SL only lists
+reimbursed products (Gardasil 9, for instance, is missing there because the cantonal programmes pay for it).
+
+- **Not on the Swissmedic list:** Hexyon, Td-pur, RotaTeq, Nimenrix, Trumenba. They stay in the list for old or
+  foreign records, in the group «Nicht in der Schweiz zugelassen». S. 16 says the only dT vaccine authorised for
+  adolescents and adults "ist nicht erhältlich"; whether Td-pur was authorised before isn't checked.
+- **Added:** Adacel-Polio (dTpa-IPV), Hiberix (Hib), Twinrix (counts as hepatitis B only; hepatitis A is not
+  modelled), mNEXSPIKE (Covid-19), Enflonsia (clesrovimab). Enflonsia counts as the RSV antibody dose: the
+  schedule recommends "eine einmalige Dosis eines langwirkenden mAk" (S. 1), without naming a product for
+  infants in their first year; for 12–24 months it names "aktuell 200 mg Nirsevimab" (S. 28). Please confirm.
+- **Left out, because they would count as the wrong antigen:** PPV23 (Pneumovax-23, S. 16: not a PCV dose),
+  Zostavax (S. 15: Shingrix is needed anyway), palivizumab (Synagis, monthly, not a long-acting mAb), the RSV
+  vaccines Abrysvo, Arexvy and mResvia (`rsv` means the antibody for infants), MenC (NeisVac-C), hepatitis A
+  and travel vaccines. Such doses can't be recorded yet, because an entry needs at least one antigen; that
+  matters for PCV from 65, where a previous PPV23, PCV13 or PCV15 dose changes the recommendation (S. 16).
+- **Product-dependent rules not using the product yet:** MenACWY at 12–23 months (MenQuadfi 1 dose, Menveo
+  2 doses, S. 26), PCV valency from 65 (S. 16), HBV 11–15 adult or children's dose (Engerix-B 10/20 and HBVAXPRO
+  10/40 are one entry each; Tab. 2 Fn. 11).

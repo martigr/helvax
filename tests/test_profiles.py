@@ -306,6 +306,22 @@ def test_catalogue_must_match_the_schedule(tmp_path):
                     'SCHEDULE_FILE': str(Path(__file__).parent / 'data' / 'test-schedule.yaml')})
 
 
+def test_swiss_catalogue(app):
+    """The real catalogue: antigens as checked against Swissmedic/SL; unauthorised products grouped last."""
+    from helvax import rules
+    with app.app_context():
+        cat = rules.catalogue()
+    assert cat.get('enflonsia').antigens == ('rsv',)
+    assert cat.get('twinrix').antigens == ('hbv',)  # hepatitis A isn't in the schedule
+    assert cat.get('adacel-polio').antigens == ('dip', 'tet', 'pert', 'polio')
+    for key in ('ppv23', 'pneumovax', 'zostavax', 'synagis', 'abrysvo', 'arexvy'):
+        assert cat.get(key) is None  # would count as the wrong antigen
+    groups = cat.groups()
+    assert groups[-1][0] == 'Nicht in der Schweiz zugelassen'
+    assert {p.key for p in groups[-1][1]} == {'hexyon', 'td-pur', 'rotateq', 'nimenrix', 'trumenba'}
+    assert all(p.valency for p in cat.products if p.antigens == ('pcv',))
+
+
 def test_record_as_matrix(client, csrf, profile):
     """?ansicht=tabelle: one row per entry, one column per antigen of the record, dose numbers in the cells."""
     add_vaccination(client, csrf, profile, date='2026-03-10', lot='A21CB')
