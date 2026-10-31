@@ -37,8 +37,8 @@ Page numbers refer to the PDF. Nothing here is medical advice.
   before 16.
 - **Incomplete childhood series** (Tab. 3 and Tab. 4) are not computed. When the 4–7 or the 11–15 booster
   window has passed without the dose, helvax shows "Nachholschema mit Ärztin/Arzt festlegen".
-- **Second dose before 4 months** (S. 8: then a third dose one month later and a fourth at 12 months) and
-  infants vaccinated by the rules before 2019 (third dose at 6 months, S. 9) are not modelled.
+- **Second dose before 4 months** (S. 8: then a third dose one month later and a fourth at 12 months): the
+  given doses are read like the former 3+1 schedule (see below), but the extra third dose isn't planned.
 - **Adults don't catch up missed childhood boosters** (`skip_from: 16y` on the 4–7 and 11–15 boosters of
   `dip`, `tet`, `pert`, `polio`): from 16 these slots are dropped, and a later dose counts as an adult booster.
   Based on Tab. 2 Fn. 5 ("Das Nachholen von in der Vergangenheit nicht erfolgten Auffrischimpfungen ist nicht
@@ -46,6 +46,32 @@ Page numbers refer to the PDF. Nothing here is medical advice.
 - **Minimum interval of 2 years** before the 4–7 and the 11–15 boosters is taken from Tab. 2 Fn. 3 and applied
   to the routine schedule as well.
 - **Shorter booster intervals** for immunodeficiency, travel or exposure (S. 6 Fn. 13) are not modelled.
+
+## Former 3+1 infant schedule (`dip`, `tet`, `pert`, `polio`, `hib`, `hbv`)
+
+Until 2018 infants got DTPa-IPV-Hib(-HBV) at 2, 4 and 6 months and a 4th dose in the second year of life
+("3+1"). S. 9: they "brauchen weiterhin eine 4. Dosis ab dem Alter von 12 Monaten für einen vollständigen
+Impfschutz (Mindestabstand zur 3. Dosis: 6 Monate)". S. 13 1.2 a): 4 doses DTPa-IPV (Hib-HBV) before school age
+"wenn die 1. Dosis vor dem Alter von 6 Monaten und wenn mit einem «3+1»-Impfschema geimpft wurde (3 Dosen vor dem
+Alter von 12 Monaten, 4. Dosis im 2. Lebensjahr)"; polio then 5 doses (S. 6 Fn. 10), pertussis 6 (S. 20 Tab. 3
+Fn. 6). The series starting before 6 months (`start_age: [0d, 3m]` and `[3m, 6m]`) have an `optional` third dose
+after the second. Judgement calls:
+
+- **Which dose is the 3+1 third dose:** one given **before 11 months**, not "before 12 months" as S. 13 says. A
+  dose at 11 months is the third dose of the 2+1 schedule (minimum age 11 months, S. 8), so it completes the
+  series. Consequence: a 2+1 third dose given too early (before 11 months) now asks for a 4th dose instead of
+  showing a warning.
+- **Minimum interval to the optional dose:** 4 weeks, like the second dose. The schedule from before 2019 isn't
+  in `docs/sources/`, so its own minimum intervals are not known.
+- **4th dose:** the existing 12-month slot (minimum age 11 months per S. 8, though S. 9 says "ab dem Alter von 12
+  Monaten"; minimum interval 6 months per S. 9). After it the 4–7 booster (minimum interval 2 years) and for
+  `dip`, `tet`, `pert` the 11–15 booster follow as usual.
+- **Hib and HBV:** S. 9 and S. 13 name them in parentheses ("Hib(-HBV)", "(Hib-HBV)"); the optional dose applies to
+  both.
+- The optional dose is never planned: for a child with two doses, helvax plans the 2+1 schedule. Neither the
+  accelerated 3+1 schedule (2-3-4-12 months, S. 11) nor the extra dose after a second dose before 4 months (S. 8)
+  is planned; given doses of both are read correctly.
+- PCV isn't included: its 3+1 schedule (2-4-6-12 months) only applies after a PCV20 dose before 7 months (S. 11 g).
 
 ## Pertussis (`pert`)
 
@@ -59,8 +85,8 @@ Page numbers refer to the PDF. Nothing here is medical advice.
 
 ## Polio (`polio`)
 
-- "3+1" schedule (3 doses in the first year): a complete childhood series needs 5 doses (S. 6 Fn. 10). helvax
-  only models the 2+1 schedule plus the 4–7 booster (4 doses).
+- "3+1" schedule (3 doses in the first year): a complete childhood series needs 5 doses (S. 6 Fn. 10); see
+  "Former 3+1 infant schedule" below.
 - Catch-up 4–7 and 8–10 years are merged into one series (identical in Tab. 2).
 
 ## Hepatitis B (`hbv`)

@@ -26,7 +26,7 @@ def test_header_and_generated_optin_flags():
     assert s.flags['tick'].kind == 'condition'
     # Every rule with supplementary parts gets an opt-in flag; basic rules don't
     assert {k for k, f in s.flags.items() if f.kind == 'optin'} == {'optin:menb', 'optin:rota', 'optin:flu',
-                                                                     'optin:hpv'}
+                                                                     'optin:hpv', 'optin:ipv'}
     assert s.flags['optin:menb'].label == 'MenB-artig (ergänzende Impfung)'
 
 
@@ -61,6 +61,8 @@ def mutate(change):
      'products: expected a list of product tags'),
     (lambda d: rule(d, 'acw')['courses'][0]['series'][0]['doses'][1].update(if_previous_product=[]),
      'if_previous_product: expected a list of product tags'),
+    (lambda d: rule(d, 'hib')['courses'][0]['series'][0]['doses'][1].update(optional=True),
+     'an optional dose needs until'),
 ])
 def test_invalid_files_are_rejected(change, message):
     with pytest.raises(schedule.ScheduleError, match=message.replace('(', r'\(').replace(')', r'\)')

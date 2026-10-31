@@ -160,6 +160,8 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
     # `skip_from` age doesn't fill it: the slot is dropped (e.g. a childhood booster for an adult).
     # A slot with `if_previous_product` is dropped unless the previous dose was such a product; a slot with
     # `products` is only filled by such a product (a dose of an unknown product fills it, with a warning).
+    # An `optional` slot is only filled by a dose given before its `until` age, otherwise it is dropped; it is
+    # never planned (e.g. the third infant dose at 6 months of the schedule before 2019).
     prev = None
     last = None  # the previous dose, filling a slot or passed over
     specs = list(series.doses)
@@ -176,7 +178,8 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
             specs.pop(i)
 
     for d in given:
-        while i < len(specs) and specs[i].skip_from and d.date >= specs[i].skip_from.after(birth):
+        while i < len(specs) and (specs[i].skip_from and d.date >= specs[i].skip_from.after(birth)
+                                  or specs[i].optional and d.date >= specs[i].until.after(birth)):
             specs.pop(i)
         if last is not None:
             drop_conditional(i, last)
@@ -204,7 +207,7 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
         drop_conditional(filled, last)
     # Conditional slots after a planned dose: the product isn't known yet, so they aren't planned
     remaining = [s for k, s in enumerate(specs[filled:])
-                 if not (s.skip_from and today >= s.skip_from.after(birth))
+                 if not s.optional and not (s.skip_from and today >= s.skip_from.after(birth))
                  and not (s.if_previous_product and (k > 0 or last is None))]
     if not remaining:
         return _Part('complete', category=category, complete=True)

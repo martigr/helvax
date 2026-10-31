@@ -311,3 +311,30 @@ def test_dose_of_a_product():
     r = by_product('pnc', birth, [(D(2026, 3, 1), None)], today=D(2026, 4, 1))
     assert r.status == 'complete'
     assert r.warnings == ('Dosis 1 vom 01.03.2026: Impfstoff unbekannt; zählt als passende Dosis, bitte prüfen.',)
+
+
+def test_optional_dose():
+    """optional + until: a dose before 11 months fills the extra slot (former 3+1 schedule); it is never planned."""
+    birth, optin = D(2020, 1, 1), ['optin:ipv']
+
+    def ipv(*dates, today):
+        return status('ipv', birth, doses_of('ipv', *dates), today, optin)
+
+    # Two doses: the plan goes on with the 12-month dose, the optional slot isn't planned
+    r = ipv(D(2020, 3, 1), D(2020, 5, 1), today=D(2020, 6, 1))
+    assert [(p.number, p.recommended) for p in r.plan] == [(3, D(2021, 1, 1)), (4, D(2024, 1, 1))]
+    # 2+1: the third dose from 11 months fills the 12-month slot, no fourth dose before the booster
+    r = ipv(D(2020, 3, 1), D(2020, 5, 1), D(2020, 12, 15), today=D(2021, 6, 1))
+    assert (r.next.number, r.next.recommended, r.warnings) == (4, D(2024, 1, 1), ())
+    # 3+1: a third dose at 6 months fills the optional slot; the fourth from 12 months, 6 months after it
+    r = ipv(D(2020, 3, 1), D(2020, 5, 1), D(2020, 7, 1), today=D(2020, 8, 1))
+    assert (r.next.number, r.next.earliest, r.next.recommended, r.warnings) == (4, D(2021, 1, 1), D(2021, 1, 1), ())
+    r = ipv(D(2020, 3, 1), D(2020, 5, 1), D(2020, 7, 1), D(2021, 7, 1), today=D(2022, 1, 1))
+    assert (r.next.number, r.next.recommended, r.warnings) == (5, D(2024, 1, 1), ())
+    r = ipv(D(2020, 3, 1), D(2020, 5, 1), D(2020, 7, 1), D(2021, 7, 1), D(2024, 3, 1), today=D(2026, 1, 1))
+    assert (r.status, r.warnings) == ('complete', ())
+    # Intervals are still checked, for the optional dose and after it
+    r = ipv(D(2020, 3, 1), D(2020, 5, 1), D(2020, 5, 15), today=D(2020, 6, 1))
+    assert r.warnings == ('Dosis 3 vom 15.05.2020: weniger als 4 Wochen nach der vorherigen Dosis.',)
+    r = ipv(D(2020, 3, 1), D(2020, 5, 1), D(2020, 7, 1), D(2020, 12, 1), today=D(2021, 1, 1))
+    assert r.warnings == ('Dosis 4 vom 01.12.2020: weniger als 6 Monate nach der vorherigen Dosis.',)
