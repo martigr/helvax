@@ -15,7 +15,7 @@ due.
 - **Frontend:** server-rendered Jinja templates, one stylesheet, no build step. JavaScript only where it
   helps and is optional: confirmation dialog (`confirm.js`), password repeat check (`account.js`), ticking the
   antigens of a chosen vaccine (`vaccination.js`), the print button (`print.js`), the push button on `/account`
-  (`push.js`), the service worker.
+  (`push.js`), pull to refresh in the home screen app (`pullrefresh.js`), the service worker.
 - **UI language:** German (Swiss). Code, comments, commit messages and docs: English.
 - Built after the conventions of [laundry-booking](https://github.com/martigr/laundry-booking).
 
@@ -360,6 +360,9 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 - Design tokens in `:root` of `style.css`. Status colours: red = overdue, orange = due, grey = upcoming,
   green = complete, grey = not recommended. Print styles (`@media print`) hide navigation and buttons.
 - The footer of logged-in pages shows the version and the disclaimer; logged-out pages show neither.
+- Pull to refresh (`pullrefresh.js`, logged-in layout only): iOS has none in standalone mode, so the script
+  draws its own indicator. It only runs in the home screen app, stays off once a form field was changed, and
+  reloads with a fresh GET (`location.replace`), so a page shown after a POST is never submitted again.
 - Home screen icons are committed PNGs drawn by `python scripts/icons.py` (needs Pillow) from `_logo.html`.
 - README screenshots in `docs/screenshots/` are taken from `seed-demo` data only.
 

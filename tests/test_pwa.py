@@ -110,3 +110,26 @@ def test_offline_page_keeps_flash_messages(app, client, login):
 
 def test_offline_page_only_answers_get(client, csrf):
     assert client.post('/offline', data={'csrf_token': csrf()}).status_code == 405
+
+
+# --- Pull to refresh -----------------------------------------------------------------------------
+
+@pytest.mark.parametrize('url', ['/', '/account'])
+def test_logged_in_pages_load_pull_to_refresh(client, login, url):
+    login('bob')
+    html = client.get(url).get_data(as_text=True)
+    assert '<script src="/static/pullrefresh.js" defer></script>' in html
+
+
+@pytest.mark.parametrize('url', ['/login', '/offline'])
+def test_pull_to_refresh_not_on_logged_out_pages(client, url):
+    assert 'pullrefresh.js' not in client.get(url).get_data(as_text=True)
+
+
+def test_pull_to_refresh_script():
+    js = (STATIC / 'pullrefresh.js').read_text()
+    assert 'standalone' in js  # only in the home screen app; Safari has its own
+    assert 'dirty' in js  # off once a form field was changed
+    # A fresh GET: reload() would send the POST again on a page shown in answer to a form
+    assert 'location.replace(' in js and 'reload(' not in js
+    assert '.ptr {' in (STATIC / 'style.css').read_text()
