@@ -31,7 +31,9 @@ All screenshots show the fictional demo family of `flask seed-demo`.
   lot number, who vaccinated, note. Combination vaccines (e.g. DTPa-IPV-Hib-HBV) are the normal case: all
   logic works per antigen. A catalogue maps Swiss trade names to antigens and tags the products that some
   rules depend on (Menveo or MenQuadfi, PCV valency); anything else is entered as "Anderer Impfstoff" with
-  manually chosen antigens.
+  manually chosen antigens. Vaccinations the schedule doesn't compute (e.g. MenC/NeisVac-C, BCG, hepatitis A,
+  PPV23, travel vaccines) can be recorded too, "ohne Auswertung": they appear in the record, but get no status
+  and no reminders.
 - **Status per antigen** after the Swiss schedule 2026: *überfällig*, *fällig*, *demnächst*, *vollständig*,
   *nicht empfohlen*, with the recommended date, the latest date and a catch-up plan that respects minimum
   intervals and age limits (Tab. 2 of the schedule). Supplementary vaccinations (rotavirus, meningococci,
@@ -297,7 +299,7 @@ date;product;product_name;antigens;doses;lot;administered_by;note
 ```
 
 **From meineimpfungen.ch (eVACDOC XML):** `convert-evacdoc export.xml impfungen.csv` writes the vaccinations
-of the file as such a CSV and lists what it left out (entries without an antigen of the schedule, e.g. BCG or
+of the file as such a CSV and lists what it left out (entries without an antigen of the schedule, e.g.
 "Meningococcus" without serogroup; past illnesses and the problem list, which you record in the app). Check
 and edit the CSV, then import it with `--dry-run` first. Details: [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md#evacdoc-import-flask-convert-evacdoc).
 

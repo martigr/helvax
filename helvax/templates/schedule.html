@@ -32,4 +32,11 @@
     </table>
   </div>
 </section>
+{% if schedule.record_only_antigens %}
+<section class="card">
+  <h2>Ohne Auswertung</h2>
+  <p class="hint" style="margin:0">Diese Impfungen lassen sich im Impfausweis erfassen, helvax berechnet dafür aber nichts: kein Status, keine Erinnerungen. Sie zählen auch nicht für eine ähnliche Impfung oben (z. B. Meningokokken C nicht für Meningokokken ACWY).</p>
+  <ul class="chips">{% for a in schedule.record_only_antigens.values() %}<li>{{ a.label }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
 {% endblock %}

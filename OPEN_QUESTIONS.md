@@ -170,6 +170,21 @@ after the second. Judgement calls:
   (Tab. 10).
 - Hepatitis A (risk groups and travel).
 
+## Record-only vaccinations (app convention)
+
+So a booklet can be recorded completely, the schedule file declares antigens with `record_only: true` and no
+rule: MenC (`menc`), PPV23 (`ppv23`), hepatitis A (`hav`), the RSV vaccine for adults (`rsv_vaccine`), BCG
+(`bcg`), smallpox/mpox (`smallpox`), yellow fever, typhoid, rabies, Japanese encephalitis, cholera, dengue and
+`unlisted` ("Andere (nicht aufgeführt)"). Their doses are shown and numbered, but never evaluated: no status,
+no reminders. They don't count for any rule either:
+
+- A MenC dose (NeisVac-C, Menjugate) doesn't count as a MenACWY dose.
+- A PPV23 dose doesn't count as a PCV dose (S. 16). It isn't used for the PCV recommendation from 65 either,
+  although a previous PPV23 dose changes it there (S. 16): please check whether that should be modelled.
+- The RSV vaccines for adults (Arexvy, Abrysvo) are not the infant antibody (`rsv`).
+- Twinrix is now `hav` + `hbv`: the dose counts for hepatitis B as before; hepatitis A is only recorded.
+  Entries saved before keep only `hbv` until they are edited and saved again.
+
 ## Product catalogue
 
 `helvax/catalogue/products-ch.yaml` maps trade names to antigens. It is not from the BAG schedule. Checked on
@@ -184,11 +199,13 @@ reimbursed products (Gardasil 9, for instance, is missing there because the cant
   modelled), mNEXSPIKE (Covid-19), Enflonsia (clesrovimab). Enflonsia counts as the RSV antibody dose: the
   schedule recommends "eine einmalige Dosis eines langwirkenden mAk" (S. 1), without naming a product for
   infants in their first year; for 12–24 months it names "aktuell 200 mg Nirsevimab" (S. 28). Please confirm.
-- **Left out, because they would count as the wrong antigen:** PPV23 (Pneumovax-23, S. 16: not a PCV dose),
-  Zostavax (S. 15: Shingrix is needed anyway), palivizumab (Synagis, monthly, not a long-acting mAb), the RSV
-  vaccines Abrysvo, Arexvy and mResvia (`rsv` means the antibody for infants), MenC (NeisVac-C), hepatitis A
-  and travel vaccines. Such doses can't be recorded yet, because an entry needs at least one antigen; that
-  matters for PCV from 65, where a previous PPV23, PCV13 or PCV15 dose changes the recommendation (S. 16).
+- **Left out, because they would count as the wrong antigen:** Zostavax (S. 15: Shingrix is needed anyway)
+  and palivizumab (Synagis, monthly, not a long-acting mAb). Such doses can be recorded as "Anderer
+  Impfstoff" with a record-only antigen (e.g. `unlisted`).
+- **Record-only group «Ohne Auswertung»:** NeisVac-C, Menjugate, Pneumovax 23, Havrix, Arexvy, Abrysvo, BCG,
+  Stamaril, Vivotif, Typhim Vi, Rabipur, Verorab, Ixiaro, Dukoral, Qdenga, Jynneos/Imvanex. Their
+  authorisation and ingredients were **not** checked against the Swissmedic list; since they are never
+  evaluated, a wrong entry only affects the label in the record.
 - **Product-dependent rules:** MenACWY at 12–23 months and PCV from 65 use the `tags` of the products. Not
   yet: HBV 11–15 adult or children's dose (Engerix-B 10/20 and HBVAXPRO 10/40 are one entry each; Tab. 2
   Fn. 11).
@@ -201,7 +218,8 @@ becomes import rows (`helvax/evacdoc.py`).
 - **Antigens from the SNOMED CT reason codes** of each vaccination ("Diphtheria vaccination (procedure)" etc.,
   `SNOMED_ANTIGENS`), not from the product name or the ATC code. Only codes that name one antigen of the
   schedule are mapped. "Meningococcus vaccination" (41088001) doesn't say the serogroup (MenC, MenACWY or
-  MenB), so such entries are left out and reported; so are BCG and anything else without an antigen.
+  MenB), so such entries are left out and reported; so is anything else without an antigen. BCG (42284007)
+  maps to the record-only antigen `bcg`.
 - **Product:** a catalogue product only if its name (or a name the document's name starts with, e.g.
   "FSME-Immun CC" → FSME-Immun) matches *and* it covers exactly the antigens of the document; otherwise
   "Anderer Impfstoff" with the document's name and antigens. Old products (Poloral, DiTePer Anatoxal,

@@ -312,12 +312,16 @@ def test_swiss_catalogue(app):
     """The real catalogue: antigens as checked against Swissmedic/SL; unauthorised products grouped last."""
     from helvax import rules
     with app.app_context():
-        cat = rules.catalogue()
+        cat, schedule = rules.catalogue(), rules.schedule()
     assert cat.get('enflonsia').antigens == ('rsv',)
-    assert cat.get('twinrix').antigens == ('hbv',)  # hepatitis A isn't in the schedule
+    assert cat.get('twinrix').antigens == ('hav', 'hbv')  # hepatitis A is record-only
     assert cat.get('adacel-polio').antigens == ('dip', 'tet', 'pert', 'polio')
-    for key in ('ppv23', 'pneumovax', 'zostavax', 'synagis', 'abrysvo', 'arexvy'):
+    for key in ('zostavax', 'synagis'):
         assert cat.get(key) is None  # would count as the wrong antigen
+    # Vaccines the schedule doesn't model are listed with record-only antigens only
+    record_only = dict(cat.groups())['Ohne Auswertung']
+    assert {'neisvac-c', 'pneumovax-23', 'bcg', 'arexvy'} <= {p.key for p in record_only}
+    assert all(a not in schedule.rules for p in record_only for a in p.antigens)
     groups = cat.groups()
     assert groups[-1][0] == 'Nicht in der Schweiz zugelassen'
     assert {p.key for p in groups[-1][1]} == {'hexyon', 'td-pur', 'rotateq', 'nimenrix', 'trumenba'}
@@ -356,6 +360,41 @@ def test_the_product_decides_the_next_dose(client, csrf, login):
     add_vaccination(client, csrf, pid, date='2026-06-15', **other)
     page = client.get(f'/profiles/{pid}').get_data(as_text=True)
     assert 'Impfstoff unbekannt; ob eine weitere Dosis nötig ist' in page
+
+
+def test_record_only_vaccinations(app, client, csrf, query, profile):
+    """MenC, BCG etc. are recorded and numbered, but not evaluated: no status, no column status, no immunity."""
+    with app.app_context():
+        from helvax import profiles
+        from helvax.db import get_db
+        row = get_db().execute('SELECT * FROM profiles WHERE id = ?', (profile,)).fetchone()
+        before = profiles.evaluate(row)[0]
+    assert add_vaccination(client, csrf, profile, product='neisvac-c', date='2026-06-01').status_code == 302
+    assert add_vaccination(client, csrf, profile, product='other', product_name='BCG Ausland', antigens=['bcg'],
+                           date='2026-01-20').status_code == 302
+    assert sorted(a for (a,) in query('SELECT antigen FROM vaccination_antigens')) == ['bcg', 'menc']
+    with app.app_context():
+        row = get_db().execute('SELECT * FROM profiles WHERE id = ?', (profile,)).fetchone()
+        statuses, numbers, _ = profiles.evaluate(row)
+    assert statuses == before  # not even MenACWY changes
+    assert {s.antigen for s in statuses}.isdisjoint({'menc', 'bcg'})
+    assert sorted(numbers.values()) == [1, 1]
+    page = client.get(f'/profiles/{profile}').get_data(as_text=True)
+    assert 'Meningokokken C <span class="dose-no">1</span>' in page
+    assert 'Tuberkulose (BCG) <span class="dose-no">1</span>' in page
+    assert '<option value="bcg">' not in page  # no immunity for record-only antigens
+    r = client.post(f'/profiles/{profile}/immunities', data={'antigen': 'bcg', 'kind': 'disease',
+                                                             'csrf_token': csrf()})
+    assert r.status_code == 400
+    page = client.get(f'/profiles/{profile}?ansicht=tabelle').get_data(as_text=True)
+    assert '<span class="sr-only">Meningokokken C: nicht ausgewertet</span>' in page
+    assert 'Ohne Status: nur erfasst' in page
+    form = client.get(f'/profiles/{profile}/vaccinations/new').get_data(as_text=True)
+    assert 'Ohne Auswertung (nur erfasst)' in form and 'value="menc"' in form
+    boxes = form.split('id="antigen-boxes"')[1]
+    assert boxes.index('value="tbe"') < boxes.index('Ohne Auswertung (nur erfasst)') < boxes.index('value="bcg"')
+    schedule_page = client.get('/schedule').get_data(as_text=True)
+    assert '<h2>Ohne Auswertung</h2>' in schedule_page and '<li>Tuberkulose (BCG)</li>' in schedule_page
 
 
 def test_record_as_matrix(client, csrf, profile):

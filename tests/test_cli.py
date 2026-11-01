@@ -67,6 +67,7 @@ def test_list_products(app):
     assert runner.invoke(args=['list-products', 'gibtsnicht']).exit_code == 1
     r = runner.invoke(args=['list-products', '--antigens'])
     assert 'measles' in r.output and 'Masern' in r.output
+    assert 'bcg           Tuberkulose (BCG) (nur erfasst, ohne Auswertung)' in r.output
 
 
 @pytest.fixture
@@ -211,25 +212,26 @@ def test_convert_evacdoc(app, tmp_path, lena, query):
     assert target.read_text(encoding='utf-8-sig').splitlines()[1:] == [
         '05.01.2020;other;Testpolio oral;polio;;;;',
         '05.01.2020;other;Boostrix;dip tet;;;;',
+        '05.01.2020;bcg;;;;;;',  # record-only antigen, matched to the catalogue product
         '10.02.2020;other;Testkombi;dip;;;;',
         '01.06.2020;fsme-immun;;;;;;',
         '15.03.2021;boostrix;;;;TEST01;T. Muster;']
     out = r.output
     assert 'Testkombi vom 10.02.2020: Meningococcus vaccination (procedure) hat kein Antigen' in out
     assert 'nur der Rest übernommen' in out
-    assert 'BCG vom 05.01.2020: BCG vaccination hat kein Antigen im Impfplan, weggelassen' in out
+    assert 'BCG vom' not in out
     assert out.count('nicht verabreicht oder nicht abgeschlossen') == 2
     assert 'Revaxis vom (ohne Datum): kein Datum' in out
     assert 'Abschnitt «Bisherige Krankheiten»' in out and 'Abschnitt «Impfplan»' not in out
-    assert '5 Impfung(en)' in out
+    assert '6 Impfung(en)' in out
 
     # The result is accepted by the import (Lena is born 2020-01-10: the rows from 05.01.2020 are too early)
     r = app.test_cli_runner().invoke(args=['import-vaccinations', 'bob', 'Lena', str(target), '--dry-run'])
-    assert r.exit_code == 1 and r.output.count('vor dem Geburtsdatum') == 2, r.output
+    assert r.exit_code == 1 and r.output.count('vor dem Geburtsdatum') == 3, r.output
     with app.app_context(), get_db() as con:
         con.execute("UPDATE profiles SET birth_date = '2019-01-01' WHERE id = ?", (lena,))
     r = app.test_cli_runner().invoke(args=['import-vaccinations', 'bob', 'Lena', str(target), '--yes'])
-    assert r.exit_code == 0 and '5 Impfung(en) für Lena gespeichert' in r.output, r.output
+    assert r.exit_code == 0 and '6 Impfung(en) für Lena gespeichert' in r.output, r.output
 
 
 @pytest.mark.parametrize('content, message', [

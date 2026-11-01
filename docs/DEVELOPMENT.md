@@ -198,6 +198,7 @@ antigens, when a catalogue product is used) are in `OPEN_QUESTIONS.md`; the test
 ```yaml
 schedule: {id, title, publisher, published, revised, source_url, overdue_grace: 1m, placeholder: false}
 antigens:  {<key>: {label, short}}            # e.g. dip, tet, pert, polio, hib, hbv, pcv, ... tbe
+  # record_only: true = no rule (menc, bcg, hav, ppv23, travel vaccines, ...): recorded, never evaluated
 flags:     {<key>: {label}}                   # conditions; 'optin:<antigen>' flags are generated
 rules:
   - antigen: dip
@@ -257,6 +258,11 @@ rules:
   when the next dose comes later, the slot is dropped. It is never planned. Used for the third infant dose at
   6 months of the 3+1 schedule before 2019 (S. 9), so such records count 4 doses before the boosters without
   interval warnings.
+- **Record-only antigens** (`record_only: true`) have no rule: entries can name them (form, catalogue, CSV and
+  eVACDOC import), the record numbers their doses, but `profiles.evaluate()` doesn't pass them to the engine,
+  so they get no status, no column status in the matrix, no reminders and no immunity. Every other antigen
+  needs a rule, and a record-only antigen can't have one (checked at startup). `Schedule.evaluated_antigens` /
+  `record_only_antigens` split them for the form («Ohne Auswertung (nur erfasst)») and `/schedule`.
 - YAML anchors (`&dt_courses`, `*dt_courses`) share identical rules (diphtheria/tetanus, MMR).
 - Don't name a key `on`, `yes` or `no`: YAML 1.1 reads them as booleans.
 
@@ -313,7 +319,7 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 | `/profiles/<id>/vaccinations/new` | GET/POST | family | `date` (birth ≤ date ≤ today), `product` (catalogue key or `other` with `product_name` and `antigens`), `lot` (40), `administered_by` (80), `note` (200), `another=1` to add the next |
 | `/vaccinations/<id>/edit` | GET/POST | family | Same, plus `dose_<antigen>` (1–20, empty = computed) |
 | `/vaccinations/<id>/delete` | POST | family | |
-| `/profiles/<id>/immunities` | POST | family | `antigen`, `kind` (`disease`/`serology`), optional `date`, `note`; one per antigen |
+| `/profiles/<id>/immunities` | POST | family | `antigen` (one with a rule; 400 for record-only ones), `kind` (`disease`/`serology`), optional `date`, `note`; one per antigen |
 | `/immunities/<id>/delete` | POST | family | |
 | `/account` | GET/POST | user | `action=name`, `action=email` (needs confirming), `action=verify_email`, `action=password`, `action=reminders` (`remind_mail`, `remind_push`, `leads` repeated, `overdue_days`, `watch` repeated profile ids; 400 for values not offered or profiles of other families) |
 | `/push/subscribe` | POST | user | `endpoint`, `p256dh`, `auth` from `push.js`; 204; 400 for invalid ones; 404 without push config |

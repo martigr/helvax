@@ -48,6 +48,23 @@ antigens:
   covid19: {label: Covid-19, short: Covid}
   rsv: {label: RSV (Antikörper für Säuglinge), short: RSV}
   tbe: {label: Zeckenenzephalitis (FSME), short: FSME}
+  # Record-only (no rule, never evaluated): vaccinations the schedule doesn't model (risk groups, travel,
+  # former routine vaccinations), so a booklet can be recorded completely. A MenC dose is not a MenACWY dose,
+  # PPV23 is not a PCV dose (S. 16), the adult RSV vaccine is not the antibody for infants. OPEN_QUESTIONS.md
+  # ("Record-only vaccinations").
+  menc: {label: Meningokokken C, short: MenC, record_only: true}
+  ppv23: {label: "Pneumokokken (Polysaccharid, PPV23)", short: PPV23, record_only: true}
+  hav: {label: Hepatitis A, short: HAV, record_only: true}
+  rsv_vaccine: {label: RSV (Impfung für Erwachsene), short: RSV-Impf., record_only: true}
+  bcg: {label: Tuberkulose (BCG), short: BCG, record_only: true}
+  smallpox: {label: Pocken / Mpox, short: Pocken, record_only: true}
+  yellow_fever: {label: Gelbfieber, short: GF, record_only: true}
+  typhoid: {label: Typhus, short: Typhus, record_only: true}
+  rabies: {label: Tollwut, short: Tollwut, record_only: true}
+  jev: {label: Japanische Enzephalitis, short: JE, record_only: true}
+  cholera: {label: Cholera, short: Cholera, record_only: true}
+  dengue: {label: Dengue, short: Dengue, record_only: true}
+  unlisted: {label: Andere (nicht aufgeführt), short: Andere, record_only: true}
 
 flags:
   rsv_maternal:

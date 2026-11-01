@@ -34,7 +34,7 @@
         {% for c in matrix.columns %}
         {% set s = c.status %}
         <td class="matrix-status{% if s %} status-{{ s.status }}{% endif %}"{% if s %} title="{{ c.label }}: {{ STATUS_LABELS[s.status] }}{% if s.next and s.status != 'complete' %}, empfohlen {{ s.next.recommended|date }}{% endif %}"{% endif %}>
-          {%- if s %}<span aria-hidden="true">{{ MATRIX_MARKS[s.status] }}</span><span class="sr-only">{{ c.label }}: {{ STATUS_LABELS[s.status] }}</span>{% endif -%}
+          {%- if s %}<span aria-hidden="true">{{ MATRIX_MARKS[s.status] }}</span><span class="sr-only">{{ c.label }}: {{ STATUS_LABELS[s.status] }}</span>{% elif c.record_only %}<span class="sr-only">{{ c.label }}: nicht ausgewertet</span>{% endif -%}
         </td>
         {% endfor %}
       </tr>
@@ -44,5 +44,6 @@
 <p class="hint" style="margin:0">Zahl = Dosis gegen diese Krankheit; × = gegeben, zählt aber nicht (z. B. zu früh).
   Status: <span class="matrix-key status-overdue">!</span> überfällig, <span class="matrix-key status-due">●</span> fällig,
   <span class="matrix-key status-upcoming">○</span> demnächst, <span class="matrix-key status-complete">✓</span> vollständig,
-  – nicht empfohlen. Eine leere Spalte mit Status heisst: noch keine Dosis erfasst.</p>
+  – nicht empfohlen. Eine leere Spalte mit Status heisst: noch keine Dosis erfasst.{% if matrix.columns|selectattr('record_only')|list %}
+  Ohne Status: nur erfasst, wird nicht ausgewertet.{% endif %}</p>
 {%- endmacro %}

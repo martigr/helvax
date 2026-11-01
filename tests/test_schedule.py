@@ -63,11 +63,25 @@ def mutate(change):
      'if_previous_product: expected a list of product tags'),
     (lambda d: rule(d, 'hib')['courses'][0]['series'][0]['doses'][1].update(optional=True),
      'an optional dose needs until'),
+    (lambda d: d['antigens'].update(xyz={'label': 'X', 'short': 'X'}), 'no rule for xyz'),
+    (lambda d: d['antigens']['hib'].update(record_only=True), "antigen 'hib' is record_only"),
 ])
 def test_invalid_files_are_rejected(change, message):
     with pytest.raises(schedule.ScheduleError, match=message.replace('(', r'\(').replace(')', r'\)')
                        .replace('[', r'\[').replace(']', r'\]')):
         schedule.parse(mutate(change))
+
+
+def test_record_only_antigens():
+    s = schedule.parse(mutate(lambda d: d['antigens'].update(bcg={'label': 'BCG-artig', 'short': 'BCG',
+                                                                  'record_only': True})))
+    assert list(s.record_only_antigens) == ['bcg'] and 'bcg' not in s.evaluated_antigens
+    assert set(s.evaluated_antigens) == set(s.rules)
+    # The engine ignores doses of antigens without a rule; they are numbered for the record
+    profile, today = Profile(date(2026, 1, 1)), date(2026, 10, 1)
+    bcg = [engine.Dose(date(2026, 1, 10), 'bcg', 1)]
+    assert engine.evaluate(profile, bcg, s, today) == engine.evaluate(profile, [], s, today)
+    assert engine.number_doses(profile, bcg, s) == {(1, 'bcg'): 1}
 
 
 def test_product_tags_of_the_rules():

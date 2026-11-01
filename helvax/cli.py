@@ -101,7 +101,8 @@ def list_products_command(search, show_antigens):
     schedule = rules.schedule()
     if show_antigens:
         for key, antigen in schedule.antigens.items():
-            click.echo(f'{key:<11} {antigen.label}')
+            suffix = ' (nur erfasst, ohne Auswertung)' if antigen.record_only else ''
+            click.echo(f'{key:<13} {antigen.label}{suffix}')
         return
     needle = (search or '').casefold()
     found = False

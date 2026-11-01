@@ -23,8 +23,8 @@ LOINC_PLAN = '18776-5'  # recommendations of the exporting system: not a record,
 MAX_BYTES = 10 * 1024 * 1024
 
 # SNOMED CT procedure codes "<disease> vaccination (procedure)" → antigen of the schedule. Only codes whose
-# meaning is unambiguous for one antigen: "Meningococcus vaccination" (41088001) doesn't say the serogroup,
-# BCG (42284007) has no antigen in the schedule; both are reported instead.
+# meaning is unambiguous for one antigen: "Meningococcus vaccination" (41088001) doesn't say the serogroup and
+# is reported instead. BCG is a record-only antigen (not evaluated).
 SNOMED_ANTIGENS = {
     '76668005': 'dip',       # Diphtheria vaccination
     '127786006': 'tet',      # Tetanus vaccination
@@ -36,6 +36,7 @@ SNOMED_ANTIGENS = {
     '50583002': 'mumps',     # Mumps vaccination
     '82314000': 'rubella',   # Rubella vaccination
     '281658005': 'tbe',      # Tick-borne encephalitis vaccination
+    '42284007': 'bcg',       # BCG vaccination (record-only)
 }
 
 
