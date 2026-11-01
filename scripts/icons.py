@@ -10,6 +10,7 @@ colour changes. Needs Pillow, which is not in requirements-dev.txt:
 - icon-maskable-512.png: full-bleed, logo inside the inner 60 %, Android crops it to its own shape
 - apple-touch-icon.png: 180 px, full-bleed and opaque, iOS rounds the corners itself
 """
+import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -23,7 +24,7 @@ SCALE = 4  # draw larger, then downscale for smooth edges
 
 
 def draw_icon(size, logo_share, rounded):
-    """Accent square with the white shield and cross of _logo.html (viewBox 24) in its centre."""
+    """Accent square with the white syringe of _logo.html (viewBox 24) in its centre."""
     big = size * SCALE
     img = Image.new('RGBA', (big, big), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -48,19 +49,29 @@ def draw_icon(size, logo_share, rounded):
         for x, y in pts:
             d.ellipse((x - h, y - h, x + h, y + h), fill=WHITE)
 
-    # The shield: M12 2.5 l7.5 3 v6 c0 4.6 -3.2 8.6 -7.5 10 c-4.3 -1.4 -7.5 -5.4 -7.5 -10 v-6 z
-    def curve(p0, p1, p2, p3, steps=24):
+    # The syringe, drawn upright and turned by rotate(45 12 12) like the <g> in _logo.html
+    def rot(x, y):
+        c = math.sqrt(0.5)
+        return 12 + (x - 12) * c - (y - 12) * c, 12 + (x - 12) * c + (y - 12) * c
+
+    def stroke_path(points, closed=False):
+        pts = [rot(x, y) for x, y in points]
+        line(pts + pts[:2] if closed else pts)
+
+    def rounded_rect(x, y, w, h, r, steps=6):
         out = []
-        for i in range(steps + 1):
-            t = i / steps
-            out.append(tuple((1 - t) ** 3 * a + 3 * (1 - t) ** 2 * t * b + 3 * (1 - t) * t ** 2 * c + t ** 3 * e
-                             for a, b, c, e in zip(p0, p1, p2, p3, strict=True)))
+        for cx, cy, a0 in ((x + w - r, y + r, -90), (x + w - r, y + h - r, 0),
+                           (x + r, y + h - r, 90), (x + r, y + r, 180)):
+            out += [(cx + r * math.cos(math.radians(a0 + 90 * i / steps)),
+                     cy + r * math.sin(math.radians(a0 + 90 * i / steps))) for i in range(steps + 1)]
         return out
-    right = curve((19.5, 11.5), (19.5, 16.1), (16.3, 20.1), (12, 21.5))
-    left = curve((12, 21.5), (7.7, 20.1), (4.5, 16.1), (4.5, 11.5))
-    line([(12, 2.5), (19.5, 5.5)] + right + left + [(4.5, 5.5), (12, 2.5)])
-    line([(12, 8), (12, 15)])  # the cross
-    line([(8.5, 11.5), (15.5, 11.5)])
+
+    stroke_path([(8.75, 0.5), (15.25, 0.5)])  # plunger handle
+    stroke_path([(12, 0.5), (12, 4.5)])  # plunger rod
+    stroke_path(rounded_rect(7.5, 4.5, 9, 13.5, 1.3), closed=True)  # barrel
+    stroke_path([(12, 18), (12, 24)])  # needle
+    for y in (8, 11, 14):  # graduation marks
+        stroke_path([(7.5, y), (10.5, y)])
     return img.resize((size, size), Image.LANCZOS)
 
 
