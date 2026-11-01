@@ -130,7 +130,7 @@
     <div class="field">
       <label for="imm-antigen">Gegen</label>
       <select id="imm-antigen" name="antigen" required>
-        {% for key, a in schedule.antigens.items() %}<option value="{{ key }}">{{ a.label }}</option>{% endfor %}
+        {% for key, a in schedule.evaluated_antigens.items() %}<option value="{{ key }}">{{ a.label }}</option>{% endfor %}
       </select>
     </div>
     <div class="field">

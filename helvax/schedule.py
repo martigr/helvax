@@ -136,6 +136,7 @@ class Antigen:
     key: str
     label: str
     short: str
+    record_only: bool = False  # can be recorded, but has no rule: never evaluated, no status, no reminders
 
 
 @dataclass(frozen=True)
@@ -157,6 +158,16 @@ class Schedule:
         """Shown in the UI, e.g. 'ch-2026 (Stand 16.04.2026)'."""
         d = self.revised or self.published
         return f'{self.id} (Stand {d:%d.%m.%Y})'
+
+    @property
+    def evaluated_antigens(self):
+        """The antigens with a rule, in the file's order."""
+        return {k: a for k, a in self.antigens.items() if not a.record_only}
+
+    @property
+    def record_only_antigens(self):
+        """The antigens that are only recorded (BCG, MenC, travel vaccines, ...), in the file's order."""
+        return {k: a for k, a in self.antigens.items() if a.record_only}
 
     def optin_flags(self, rule):
         """The opt-in flags a profile needs for this rule's supplementary parts."""
@@ -292,6 +303,8 @@ def _rule(where, r, antigens, flags):
                      'review'], ['antigen', 'category', 'ref'])
     if r['antigen'] not in antigens:
         raise ScheduleError(f'{where}: unknown antigen {r["antigen"]!r}')
+    if antigens[r['antigen']].record_only:
+        raise ScheduleError(f'{where}: antigen {r["antigen"]!r} is record_only and can\'t have a rule')
     if r['category'] not in CATEGORIES:
         raise ScheduleError(f'{where}: unknown category {r["category"]!r}')
     for key in ('requires_flag', 'skip_if_flag'):
@@ -335,8 +348,8 @@ def parse(data):
                              'overdue_grace'], ['id', 'title', 'publisher', 'published', 'source_url'])
     antigens = {}
     for key, a in (data['antigens'] or {}).items():
-        _keys(f'antigens.{key}', a, ['label', 'short'], ['label', 'short'])
-        antigens[key] = Antigen(key, str(a['label']), str(a['short']))
+        _keys(f'antigens.{key}', a, ['label', 'short', 'record_only'], ['label', 'short'])
+        antigens[key] = Antigen(key, str(a['label']), str(a['short']), bool(a.get('record_only', False)))
     flags = {}
     for key, f in (data.get('flags') or {}).items():
         _keys(f'flags.{key}', f, ['label'], ['label'])
@@ -349,6 +362,9 @@ def parse(data):
         if rule.antigen in rules:
             raise ScheduleError(f'rules[{i}]: a second rule for {rule.antigen!r}')
         rules[rule.antigen] = rule
+    missing = [k for k, a in antigens.items() if not a.record_only and k not in rules]
+    if missing:
+        raise ScheduleError(f'antigens: no rule for {", ".join(missing)} (add one or mark it record_only)')
     schedule = Schedule(id=str(head['id']), title=str(head['title']), publisher=str(head['publisher']),
                         published=_date('schedule.published', head['published']),
                         revised=_date('schedule.revised', head['revised']) if head.get('revised') else None,

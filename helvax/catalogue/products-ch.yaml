@@ -7,9 +7,10 @@
 #
 # Antigen keys must exist in the schedule file. Products that are no longer sold stay in the list, because
 # old vaccination records name them; products not authorised in Switzerland (old or foreign records) are in the
-# last group. Products whose antigens the schedule doesn't know (PPV23, Zostavax, palivizumab, RSV vaccines,
-# hepatitis A, MenC, travel vaccines) are left out: an entry needs at least one antigen and would count wrongly.
-# Anything missing: "Anderer Impfstoff" with manually chosen antigens.
+# last group. Vaccines for record-only antigens of the schedule (MenC, PPV23, hepatitis A, RSV vaccines, BCG,
+# travel vaccines) are in the group «Ohne Auswertung»: they are recorded, but never evaluated. Their
+# authorisation was NOT checked against the Swissmedic list. Left out: Zostavax and palivizumab, which would
+# count as the wrong antigen (zoster, rsv). Anything missing: "Anderer Impfstoff" with manually chosen antigens.
 #
 # group: heading in the list; tags: for rules that depend on the product (`products` and `if_previous_product`
 # in the schedule): the valency of pneumococcal vaccines (S. 16) and the MenACWY vaccine at 12–23 months (S. 26).
@@ -47,8 +48,8 @@ products:
   # Hepatitis B (Engerix-B 10/20 and HBVAXPRO 10/40 are one entry each; the dose isn't used yet)
   - {key: engerix-b, name: Engerix-B, group: Hepatitis B, antigens: [hbv]}
   - {key: hbvaxpro, name: HBVAXPRO, group: Hepatitis B, antigens: [hbv]}
-  # Twinrix also covers hepatitis A, which the schedule doesn't model
-  - {key: twinrix, name: Twinrix (Hepatitis A und B), group: Hepatitis B, antigens: [hbv]}
+  # Twinrix: hepatitis A is record-only, the dose counts as hepatitis B
+  - {key: twinrix, name: Twinrix (Hepatitis A und B), group: Hepatitis B, antigens: [hav, hbv]}
   # Others
   - {key: rotarix, name: Rotarix, group: Weitere, antigens: [rota]}
   - {key: gardasil-9, name: Gardasil 9, group: Weitere, antigens: [hpv]}
@@ -62,6 +63,23 @@ products:
   - {key: comirnaty, name: Comirnaty (Covid-19), group: Weitere, antigens: [covid19]}
   - {key: spikevax, name: Spikevax (Covid-19), group: Weitere, antigens: [covid19]}
   - {key: mnexspike, name: mNEXSPIKE (Covid-19), group: Weitere, antigens: [covid19]}
+  # Record-only antigens: recorded for completeness, no status, no reminders (not checked against Swissmedic)
+  - {key: neisvac-c, name: NeisVac-C (MenC), group: Ohne Auswertung, antigens: [menc]}
+  - {key: menjugate, name: Menjugate (MenC), group: Ohne Auswertung, antigens: [menc]}
+  - {key: pneumovax-23, name: Pneumovax 23 (PPV23), group: Ohne Auswertung, antigens: [ppv23]}
+  - {key: havrix, name: Havrix (Hepatitis A), group: Ohne Auswertung, antigens: [hav]}
+  - {key: arexvy, name: Arexvy (RSV-Impfstoff), group: Ohne Auswertung, antigens: [rsv_vaccine]}
+  - {key: abrysvo, name: Abrysvo (RSV-Impfstoff), group: Ohne Auswertung, antigens: [rsv_vaccine]}
+  - {key: bcg, name: BCG (Tuberkulose), group: Ohne Auswertung, antigens: [bcg]}
+  - {key: stamaril, name: Stamaril (Gelbfieber), group: Ohne Auswertung, antigens: [yellow_fever]}
+  - {key: vivotif, name: "Vivotif (Typhus, Schluckimpfung)", group: Ohne Auswertung, antigens: [typhoid]}
+  - {key: typhim-vi, name: Typhim Vi (Typhus), group: Ohne Auswertung, antigens: [typhoid]}
+  - {key: rabipur, name: Rabipur (Tollwut), group: Ohne Auswertung, antigens: [rabies]}
+  - {key: verorab, name: Verorab (Tollwut), group: Ohne Auswertung, antigens: [rabies]}
+  - {key: ixiaro, name: Ixiaro (Japanische Enzephalitis), group: Ohne Auswertung, antigens: [jev]}
+  - {key: dukoral, name: Dukoral (Cholera), group: Ohne Auswertung, antigens: [cholera]}
+  - {key: qdenga, name: Qdenga (Dengue), group: Ohne Auswertung, antigens: [dengue]}
+  - {key: jynneos, name: "Jynneos / Imvanex (Pocken, Mpox)", group: Ohne Auswertung, antigens: [smallpox]}
   # Not (or no longer) on the Swissmedic list of 2026-09-30: for old or foreign records
   - {key: hexyon, name: Hexyon, group: Nicht in der Schweiz zugelassen, antigens: [dip, tet, pert, polio, hib, hbv]}
   - {key: td-pur, name: Td-pur (dT), group: Nicht in der Schweiz zugelassen, antigens: [dip, tet]}

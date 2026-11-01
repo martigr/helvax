@@ -37,7 +37,14 @@
       <legend class="field-label">Schützt gegen</legend>
       <span class="hint">Bei einem Impfstoff aus der Liste gelten automatisch dessen Bestandteile; bei «Anderer Impfstoff» hier auswählen.</span>
       <div class="antigen-grid">
-        {% for key, a in antigens.items() %}
+        {% for key, a in antigens.items() if not a.record_only %}
+        <label class="check"><input type="checkbox" name="antigens" value="{{ key }}"{{ ' checked' if key in selected }}>{{ a.label }}</label>
+        {% endfor %}
+      </div>
+      <span class="field-label antigen-subhead">Ohne Auswertung (nur erfasst)</span>
+      <span class="hint">Diese Impfungen stehen nicht im Basis-Impfplan, den helvax berechnet (Risikogruppen, Reisen, frühere Impfungen). Sie erscheinen im Impfausweis, helvax zeigt dafür aber keinen Status und erinnert nicht daran.</span>
+      <div class="antigen-grid">
+        {% for key, a in antigens.items() if a.record_only %}
         <label class="check"><input type="checkbox" name="antigens" value="{{ key }}"{{ ' checked' if key in selected }}>{{ a.label }}</label>
         {% endfor %}
       </div>

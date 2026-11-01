@@ -112,8 +112,10 @@ def evaluate(profile, record=None):
                                     frozenset(i['antigen'] for i in immunities))
     catalogue = rules.catalogue()
     doses = [engine.Dose(dates.parse_day(v['date']), a['antigen'], v['id'], _product_tags(catalogue, v))
-             for v in vaccinations for a in antigens.get(v['id'], []) if a['antigen'] in schedule.rules]
-    statuses = engine.evaluate(engine_profile, doses, schedule, dates.today())
+             for v in vaccinations for a in antigens.get(v['id'], []) if a['antigen'] in schedule.antigens]
+    # Record-only antigens (no rule) are only numbered for the record, never evaluated
+    statuses = engine.evaluate(engine_profile, [d for d in doses if d.antigen in schedule.rules], schedule,
+                               dates.today())
     numbers = engine.number_doses(engine_profile, doses, schedule)
     return statuses, numbers, (vaccinations, antigens, immunities, flags)
 
@@ -148,7 +150,7 @@ def record_matrix(rows, statuses):
     columns = [k for k in schedule.antigens if k in wanted] + sorted(present - set(schedule.antigens))
     return {'columns': [{'key': k, 'label': schedule.antigens[k].label if k in schedule.antigens else k,
                          'short': schedule.antigens[k].short if k in schedule.antigens else k,
-                         'status': by_antigen.get(k)} for k in columns],
+                         'record_only': k not in schedule.rules, 'status': by_antigen.get(k)} for k in columns],
             'rows': [{**r, 'cells': [next((a for a in r['antigens'] if a['key'] == k), None) for k in columns]}
                      for r in rows]}
 
@@ -444,7 +446,7 @@ def add_immunity(profile_id):
     profile = get_family_profile(profile_id)
     schedule = rules.schedule()
     antigen, kind = request.form.get('antigen', ''), request.form.get('kind', '')
-    if antigen not in schedule.antigens or kind not in IMMUNITY_KINDS:
+    if antigen not in schedule.rules or kind not in IMMUNITY_KINDS:  # record-only antigens: no immunity
         abort(400)
     raw = request.form.get('date', '').strip()
     day = dates.parse_day(raw) if raw else None

@@ -180,6 +180,7 @@ td.actions form { display: inline-block; margin: 2px 0 2px 12px; white-space: no
 td.actions a { font-weight: 600; margin-left: 12px; }
 .antigen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); column-gap: 16px; }
 .antigen-grid .check { min-height: 36px; }
+.antigen-subhead { margin-top: 12px; }
 .dose-field { margin-bottom: 8px; }
 .field textarea, .field input[type=date] { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface); width: 100%; }
 .danger-zone { border-color: #F5C2BE; }
