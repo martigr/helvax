@@ -51,7 +51,7 @@ All screenshots show the fictional demo family of `flask seed-demo`.
 - **Reminders** by mail and Web Push: per account, chosen lead times before the recommended date (default 8
   weeks and 1 week), repeats while a vaccination is overdue, and which profiles to watch. They only name the
   profile ("Bei Mia ist eine Impfung fällig") and link to it, never the vaccine or the disease.
-- Home screen app (PWA) with an offline page; pages are never cached.
+- Home screen app (PWA) with an offline page and pull to refresh; pages are never cached.
 
 - **Import** of a vaccination record from a CSV file on the command line (`import-vaccinations`), checked like
   the form, with a preview; `convert-evacdoc` turns an eVACDOC export (e.g. meineimpfungen.ch) into such a file.
