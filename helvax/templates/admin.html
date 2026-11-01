@@ -20,7 +20,7 @@
   <section class="card split-main" aria-labelledby="users-h">
     <h2 id="users-h">Benutzer</h2>
     <div class="table-wrap">
-      <table style="min-width:760px">
+      <table style="min-width:900px">
         <thead>
           <tr><th>Anzeigename</th><th>Benutzername</th><th>E-Mail</th><th>Familie</th><th style="text-align:right">Aktionen</th></tr>
         </thead>
@@ -46,6 +46,19 @@
               {% if u['id'] == g.user['id'] %}
               <span class="hint">Du</span>
               {% else %}
+              {% if u['is_admin'] %}
+              <form method="post" action="{{ url_for('admin.set_admin', uid=u['id']) }}" data-confirm-title="Admin-Rechte entziehen?" data-confirm="{{ u['display_name'] }} kann danach keine Konten, Familien und Einstellungen mehr verwalten." data-confirm-ok="Entziehen" data-confirm-danger>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="is_admin" value="0">
+                <button type="submit" class="linklike">Admin-Rechte entziehen</button>
+              </form>
+              {% else %}
+              <form method="post" action="{{ url_for('admin.set_admin', uid=u['id']) }}" data-confirm-title="Zum Admin machen?" data-confirm="{{ u['display_name'] }} kann danach alle Konten, Familien und Einstellungen verwalten und das Audit-Log sehen." data-confirm-ok="Zum Admin machen">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="is_admin" value="1">
+                <button type="submit" class="linklike">Zum Admin machen</button>
+              </form>
+              {% endif %}
               <form method="post" action="{{ url_for('admin.reset_password', uid=u['id']) }}" data-confirm-title="Passwort zurücksetzen?" data-confirm="{{ u['display_name'] }} erhält ein neues, zufälliges Passwort. Das alte funktioniert danach nicht mehr." data-confirm-ok="Neues Passwort erzeugen">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="linklike">Passwort zurücksetzen</button>

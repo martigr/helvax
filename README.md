@@ -99,7 +99,8 @@ encrypted end to end; the app only accepts subscriptions of these services.
 
 After the first start, log in as the admin from `.env`, then under *Verwaltung* create a family and the
 accounts, and assign the accounts to the family. Change the admin password under *Konto* and remove
-`ADMIN_PASSWORD` from `.env`.
+`ADMIN_PASSWORD` from `.env`. Admin rights of other accounts can be granted or revoked there as well
+(not your own, so one admin always remains).
 
 ### Prebuilt image (private while the repository is private)
 

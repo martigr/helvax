@@ -328,7 +328,7 @@ vaccines, opt-ins, RSV by birth month, seasonal, FSME, HPV).
 | `/verify-email/<token>` | GET/POST | token | Signed, 7 days, only for the address it was sent to; GET shows a button |
 | `/admin` | GET | admin | Accounts, families, settings |
 | `/admin/users` | POST | admin | Create account |
-| `/admin/users/<id>/reset`, `/delete`, `/family` | POST | admin | New password (shown once), delete (not yourself), assign family (`family_id`, empty = none) |
+| `/admin/users/<id>/reset`, `/delete`, `/family`, `/admin` | POST | admin | New password (shown once), delete (not yourself), assign family (`family_id`, empty = none), grant or revoke admin rights (`is_admin` = `1`/`0`, not yourself) |
 | `/admin/families`, `/admin/families/<id>/delete` | POST | admin | Create (1–40 characters, unique); delete only without profiles |
 | `/admin/settings` | POST | admin | `audit_days` (1–3650) |
 | `/admin/audit` | GET | admin | `?kind=login\|record\|settings\|admin`, `?page=N` |
