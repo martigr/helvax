@@ -6,7 +6,7 @@ from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Shown in the page footer; must match `version` in pyproject.toml (test_version_matches_pyproject)
-__version__ = '0.3.1'
+__version__ = '0.4.0'
 
 
 def create_app(test_config=None):
