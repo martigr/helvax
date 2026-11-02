@@ -78,7 +78,7 @@
     <div class="toolbar">
       <button type="submit" class="btn btn-primary">Speichern</button>
       {% if not entry %}<button type="submit" class="btn" name="another" value="1">Speichern und nächste erfassen</button>{% endif %}
-      <a class="btn" href="{{ url_for('profiles.show', profile_id=profile['id']) }}#impfausweis">Abbrechen</a>
+      <a class="btn" href="{{ url_for('profiles.show', profile_id=profile['id']) }}#record">Abbrechen</a>
     </div>
   </form>
 </div>

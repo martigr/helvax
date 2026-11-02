@@ -155,12 +155,12 @@ def record_matrix(rows, statuses):
                      for r in rows]}
 
 
-VIEWS = {'liste': 'Liste', 'tabelle': 'Tabelle'}
+VIEWS = {'list': 'Liste', 'table': 'Tabelle'}
 
 
 def record_view():
-    """?ansicht=liste|tabelle: how the vaccination record is shown (default: list); 400 for anything else."""
-    view = request.args.get('ansicht', 'liste')
+    """?view=list|table: how the vaccination record is shown (default: list); 400 for anything else."""
+    view = request.args.get('view', 'list')
     if view not in VIEWS:
         abort(400)
     return view
@@ -398,7 +398,7 @@ def new_vaccination(profile_id):
         flash(f'Impfung vom {data["date"]:%d.%m.%Y} erfasst.', 'ok')
         if request.form.get('another'):
             return redirect(url_for('profiles.new_vaccination', profile_id=profile_id))
-        return redirect(url_for('profiles.show', profile_id=profile_id) + '#impfausweis')
+        return redirect(url_for('profiles.show', profile_id=profile_id) + '#record')
     return vaccination_form(profile)
 
 
@@ -422,7 +422,7 @@ def edit_vaccination(vaccination_id):
             _save_antigens(con, vaccination_id, data)
             audit.record(con, 'vaccination_changed', profile['display_name'])
         flash('Impfung gespeichert.', 'ok')
-        return redirect(url_for('profiles.show', profile_id=profile['id']) + '#impfausweis')
+        return redirect(url_for('profiles.show', profile_id=profile['id']) + '#record')
     return vaccination_form(profile, entry)
 
 
@@ -435,7 +435,7 @@ def delete_vaccination(vaccination_id):
         con.execute('DELETE FROM vaccinations WHERE id = ?', (vaccination_id,))
         audit.record(con, 'vaccination_deleted', profile['display_name'])
     flash(f'Impfung vom {dates.parse_day(entry["date"]):%d.%m.%Y} gelöscht.', 'ok')
-    return redirect(url_for('profiles.show', profile_id=profile['id']) + '#impfausweis')
+    return redirect(url_for('profiles.show', profile_id=profile['id']) + '#record')
 
 
 # --- Immunities ----------------------------------------------------------------------------------
@@ -456,7 +456,7 @@ def add_immunity(profile_id):
         note = _text(request.form, 'note', MAX_NOTE, 'Notiz')
     except UserError as e:
         flash(str(e), 'warn')
-        return redirect(url_for('profiles.show', profile_id=profile_id) + '#immunitaet')
+        return redirect(url_for('profiles.show', profile_id=profile_id) + '#immunities')
     try:
         with get_db() as con:
             con.execute('INSERT INTO immunities (profile_id, antigen, kind, date, note) VALUES (?, ?, ?, ?, ?)',
@@ -466,7 +466,7 @@ def add_immunity(profile_id):
         flash(f'Für {schedule.antigens[antigen].label} ist schon eine Immunität erfasst.', 'warn')
     else:
         flash(f'Immunität gegen {schedule.antigens[antigen].label} erfasst.', 'ok')
-    return redirect(url_for('profiles.show', profile_id=profile_id) + '#immunitaet')
+    return redirect(url_for('profiles.show', profile_id=profile_id) + '#immunities')
 
 
 @bp.route('/immunities/<int:immunity_id>/delete', methods=['POST'])
@@ -480,4 +480,4 @@ def delete_immunity(immunity_id):
         con.execute('DELETE FROM immunities WHERE id = ?', (immunity_id,))
         audit.record(con, 'immunity_deleted', row['display_name'])
     flash('Immunität gelöscht.', 'ok')
-    return redirect(url_for('profiles.show', profile_id=row['profile_id']) + '#immunitaet')
+    return redirect(url_for('profiles.show', profile_id=row['profile_id']) + '#immunities')

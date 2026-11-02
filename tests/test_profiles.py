@@ -205,6 +205,18 @@ def test_delete_vaccination(client, csrf, query, profile):
     assert query('SELECT COUNT(*) FROM vaccination_antigens') == [(0,)]
 
 
+def test_redirects_use_english_anchors(client, csrf, query, profile):
+    """Routes, query parameters and fragments are English; the page has matching ids."""
+    r = add_vaccination(client, csrf, profile)
+    assert r.headers['Location'] == f'/profiles/{profile}#record'
+    r = client.post(f'/profiles/{profile}/immunities', data={'antigen': 'varicella', 'kind': 'disease',
+                                                             'csrf_token': csrf()})
+    assert r.headers['Location'] == f'/profiles/{profile}#immunities'
+    page = client.get(f'/profiles/{profile}').get_data(as_text=True)
+    assert 'id="record"' in page and 'id="immunities"' in page
+    assert f'/profiles/{profile}?view=table#record' in page
+
+
 def test_forms_need_csrf(client, query, profile):
     assert client.post(f'/profiles/{profile}/vaccinations/new',
                        data={'date': '2026-03-10', 'product': 'hexyon'}).status_code == 400
@@ -386,7 +398,7 @@ def test_record_only_vaccinations(app, client, csrf, query, profile):
     r = client.post(f'/profiles/{profile}/immunities', data={'antigen': 'bcg', 'kind': 'disease',
                                                              'csrf_token': csrf()})
     assert r.status_code == 400
-    page = client.get(f'/profiles/{profile}?ansicht=tabelle').get_data(as_text=True)
+    page = client.get(f'/profiles/{profile}?view=table').get_data(as_text=True)
     assert '<span class="sr-only">Meningokokken C: nicht ausgewertet</span>' in page
     assert 'Ohne Status: nur erfasst' in page
     form = client.get(f'/profiles/{profile}/vaccinations/new').get_data(as_text=True)
@@ -398,11 +410,11 @@ def test_record_only_vaccinations(app, client, csrf, query, profile):
 
 
 def test_record_as_matrix(client, csrf, profile):
-    """?ansicht=tabelle: one row per entry, one column per antigen of the record, dose numbers in the cells."""
+    """?view=table: one row per entry, one column per antigen of the record, dose numbers in the cells."""
     add_vaccination(client, csrf, profile, date='2026-03-10', lot='A21CB')
     add_vaccination(client, csrf, profile, date='2026-05-12')
     add_vaccination(client, csrf, profile, date='2026-05-12', product='prevenar-13')
-    page = client.get(f'/profiles/{profile}?ansicht=tabelle').get_data(as_text=True)
+    page = client.get(f'/profiles/{profile}?view=table').get_data(as_text=True)
     assert 'class="record matrix"' in page and 'aria-current="page">Tabelle</a>' in page
     head = page.split('<thead>')[1].split('</thead>')[0]
     columns = [part.split('</span>')[0].split('">')[1] for part in head.split('<span title="')[1:]]
@@ -420,15 +432,15 @@ def test_record_as_matrix(client, csrf, profile):
     assert rows[1].count('class="matrix-cell on"') == 6 and rows[1].count('>2<span class="sr-only">') == 6
     assert rows[1].count('class="matrix-cell"></td>') == 7  # pneumococci, MenB, MMRV and RSV not in this vaccine
     assert rows[2].count('class="matrix-cell on"') == 1 and '>1<span class="sr-only"> Pneumokokken' in rows[2]
-    assert '/print?ansicht=tabelle' in page
-    printed = client.get(f'/profiles/{profile}/print?ansicht=tabelle').get_data(as_text=True)
+    assert '/print?view=table' in page
+    printed = client.get(f'/profiles/{profile}/print?view=table').get_data(as_text=True)
     assert 'class="record matrix"' in printed and '/vaccinations/' not in printed  # no edit links on paper
     # Default is the list
     assert 'class="record matrix"' not in client.get(f'/profiles/{profile}').get_data(as_text=True)
-    assert client.get(f'/profiles/{profile}?ansicht=nope').status_code == 400
+    assert client.get(f'/profiles/{profile}?view=nope').status_code == 400
 
 
 def test_matrix_without_entries_shows_what_is_needed(client, csrf, profile):
-    page = client.get(f'/profiles/{profile}?ansicht=tabelle').get_data(as_text=True)
+    page = client.get(f'/profiles/{profile}?view=table').get_data(as_text=True)
     assert 'class="record matrix"' in page and 'Noch keine Impfungen erfasst.' in page
     assert 'title="Diphtherie: überfällig' in page
