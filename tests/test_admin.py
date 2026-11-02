@@ -115,3 +115,47 @@ def test_family_errors(client, query, login):
     assert client.post('/admin/users/2/family', data={'family_id': '2', 'csrf_token': t}).status_code == 403
     assert client.post('/admin/families/1/delete', data={'csrf_token': t}).status_code == 403
     assert query('SELECT family_id FROM users ORDER BY id') == [(1,), (1,), (2,)]
+
+
+def test_grant_and_revoke_admin(client, query, login):
+    t = login('alice')
+    page = client.get('/admin').get_data(as_text=True)
+    assert 'data-confirm-title="Zum Admin machen?"' in page
+    r = client.post('/admin/users/2/admin', data={'is_admin': '1', 'csrf_token': t}, follow_redirects=True)
+    assert 'Bob ist jetzt Admin.' in r.get_data(as_text=True)
+    assert query('SELECT is_admin FROM users WHERE id = 2') == [(1,)]
+    client.post('/admin/users/2/admin', data={'is_admin': '1', 'csrf_token': t})  # unchanged: no second entry
+    assert query("SELECT username, action, detail FROM audit_log WHERE action LIKE 'user_admin%'") == [
+        ('alice', 'user_admin', 'bob')]
+    assert 'data-confirm-title="Admin-Rechte entziehen?"' in client.get('/admin').get_data(as_text=True)
+
+    t = login('bob')
+    assert client.get('/admin').status_code == 200
+    client.post('/admin/users/1/admin', data={'is_admin': '0', 'csrf_token': t})
+    assert query('SELECT is_admin FROM users WHERE id = 1') == [(0,)]
+    assert query("SELECT action, detail FROM audit_log WHERE action = 'user_admin_revoked'") == [
+        ('user_admin_revoked', 'alice')]
+
+    t = login('alice')  # takes effect immediately, also for an existing session
+    assert client.get('/admin').status_code == 403
+    assert client.post('/admin/users/2/admin', data={'is_admin': '0', 'csrf_token': t}).status_code == 403
+    assert query('SELECT is_admin FROM users ORDER BY id') == [(0,), (1,), (0,)]
+
+
+def test_cannot_change_own_admin_rights(client, query, login):
+    t = login('alice')
+    r = client.post('/admin/users/1/admin', data={'is_admin': '0', 'csrf_token': t}, follow_redirects=True)
+    assert 'eigenen Admin-Rechte nicht ändern' in r.get_data(as_text=True)
+    assert query('SELECT is_admin FROM users WHERE id = 1') == [(1,)]
+    assert 'action="/admin/users/1/admin"' not in client.get('/admin').get_data(as_text=True)
+
+
+def test_set_admin_errors(client, query, login):
+    t = login('alice')
+    assert client.post('/admin/users/2/admin', data={'is_admin': 'yes', 'csrf_token': t}).status_code == 400
+    assert client.post('/admin/users/2/admin', data={'csrf_token': t}).status_code == 400
+    assert client.post('/admin/users/99/admin', data={'is_admin': '1', 'csrf_token': t}).status_code == 404
+    assert client.post('/admin/users/2/admin', data={'is_admin': '1'}).status_code == 400  # CSRF
+    t = login('bob')
+    assert client.post('/admin/users/2/admin', data={'is_admin': '1', 'csrf_token': t}).status_code == 403
+    assert query('SELECT is_admin FROM users ORDER BY id') == [(1,), (0,), (0,)]

@@ -88,6 +88,28 @@ def delete(uid):
     return redirect(url_for('admin.index'))
 
 
+@bp.route('/users/<int:uid>/admin', methods=['POST'])
+@admin_required
+def set_admin(uid):
+    """Grant (`is_admin=1`) or revoke (`is_admin=0`) admin rights. Not for yourself: so there is always at least
+    one admin left, the one acting."""
+    value = request.form.get('is_admin', '')
+    if value not in ('0', '1'):
+        abort(400)
+    if uid == g.user['id']:
+        flash('Du kannst deine eigenen Admin-Rechte nicht ändern.', 'warn')
+        return redirect(url_for('admin.index'))
+    user = get_user(uid) or abort(404)
+    is_admin = value == '1'
+    if is_admin != bool(user['is_admin']):
+        with get_db() as con:
+            con.execute('UPDATE users SET is_admin = ? WHERE id = ?', (int(is_admin), uid))
+            audit.record(con, 'user_admin' if is_admin else 'user_admin_revoked', user['username'])
+    flash(f'{user["display_name"]} ist jetzt Admin.' if is_admin
+          else f'{user["display_name"]} ist kein Admin mehr.', 'ok')
+    return redirect(url_for('admin.index'))
+
+
 @bp.route('/users/<int:uid>/family', methods=['POST'])
 @admin_required
 def set_family(uid):
