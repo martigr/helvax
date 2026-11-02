@@ -33,15 +33,23 @@ def create_user_command(username, display_name, admin, password):
 @click.command('make-admin')
 @with_appcontext
 @click.argument('username')
-def make_admin_command(username):
-    """Gibt einem bestehenden Benutzer Admin-Rechte."""
+@click.option('--revoke', is_flag=True, help='Admin-Rechte entziehen statt geben')
+def make_admin_command(username, revoke):
+    """Gibt einem bestehenden Benutzer Admin-Rechte (oder entzieht sie mit --revoke)."""
     user = get_user_by_username(username)
     if user is None:
         raise click.ClickException(f'Benutzer {username} nicht gefunden.')
+    if bool(user['is_admin']) == (not revoke):
+        click.echo(f'{username} ist schon Admin.' if not revoke else f'{username} ist kein Admin.')
+        return
     with get_db() as con:
-        con.execute('UPDATE users SET is_admin = 1 WHERE id = ?', (user['id'],))
-        audit.record(con, 'user_admin', user['username'], username='Kommandozeile')
-    click.echo(f'{username} ist jetzt Admin.')
+        if revoke and not con.execute('SELECT 1 FROM users WHERE is_admin = 1 AND id != ?',
+                                      (user['id'],)).fetchone():
+            raise click.ClickException(f'{username} ist der letzte Admin. Gib zuerst jemand anderem Admin-Rechte.')
+        con.execute('UPDATE users SET is_admin = ? WHERE id = ?', (int(not revoke), user['id']))
+        audit.record(con, 'user_admin_revoked' if revoke else 'user_admin', user['username'],
+                     username='Kommandozeile')
+    click.echo(f'{username} ist kein Admin mehr.' if revoke else f'{username} ist jetzt Admin.')
 
 
 @click.command('seed-demo')

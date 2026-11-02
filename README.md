@@ -99,7 +99,8 @@ encrypted end to end; the app only accepts subscriptions of these services.
 
 After the first start, log in as the admin from `.env`, then under *Verwaltung* create a family and the
 accounts, and assign the accounts to the family. Change the admin password under *Konto* and remove
-`ADMIN_PASSWORD` from `.env`.
+`ADMIN_PASSWORD` from `.env`. Admin rights of other accounts can be granted or revoked there as well
+(not your own, so one admin always remains).
 
 ### Prebuilt image (private while the repository is private)
 
@@ -265,7 +266,7 @@ setting (default 90 days) are deleted automatically.
 
 ```bash
 flask --app helvax create-user <username> [--name "Display name"] [--admin]   # asks for the password
-flask --app helvax make-admin <username>
+flask --app helvax make-admin <username> [--revoke]  # grant admin rights, or revoke them (not the last admin)
 flask --app helvax seed-demo                       # fictional demo family, development only
 flask --app helvax send-notifications [--loop N]   # queue due reminders, send queued mails and push messages
 flask --app helvax gen-vapid-key                   # key for push messages (line for .env)

@@ -17,6 +17,25 @@ def test_create_user_and_make_admin(app, query):
     assert query("SELECT is_admin FROM users WHERE username = 'carl'") == [(1,)]
 
 
+def test_revoke_admin(app, query):
+    runner = app.test_cli_runner()
+    r = runner.invoke(args=['make-admin', 'alice'])
+    assert r.exit_code == 0 and 'schon Admin' in r.output
+    r = runner.invoke(args=['make-admin', '--revoke', 'bob'])
+    assert r.exit_code == 0 and 'kein Admin' in r.output
+    r = runner.invoke(args=['make-admin', '--revoke', 'alice'])
+    assert r.exit_code == 1 and 'letzte Admin' in r.output
+    assert runner.invoke(args=['make-admin', '--revoke', 'nobody']).exit_code == 1
+    assert query('SELECT is_admin FROM users ORDER BY id') == [(1,), (0,), (0,)]
+
+    assert runner.invoke(args=['make-admin', 'bob']).exit_code == 0
+    r = runner.invoke(args=['make-admin', '--revoke', 'alice'])
+    assert r.exit_code == 0 and 'alice ist kein Admin mehr' in r.output
+    assert query('SELECT is_admin FROM users ORDER BY id') == [(0,), (1,), (0,)]
+    assert query("SELECT username, action, detail FROM audit_log ORDER BY id") == [
+        ('Kommandozeile', 'user_admin', 'bob'), ('Kommandozeile', 'user_admin_revoked', 'alice')]
+
+
 def test_seed_demo_is_idempotent(app, query):
     runner = app.test_cli_runner()
     assert runner.invoke(args=['seed-demo']).exit_code == 0
