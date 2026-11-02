@@ -11,7 +11,7 @@
   <div class="toolbar">
     <a class="btn btn-primary" href="{{ url_for('profiles.new_vaccination', profile_id=profile['id']) }}">Impfung erfassen</a>
     <a class="btn" href="{{ url_for('profiles.edit', profile_id=profile['id']) }}">Profil bearbeiten</a>
-    <a class="btn" href="{{ url_for('profiles.print_view', profile_id=profile['id'], ansicht=view) }}">Drucken</a>
+    <a class="btn" href="{{ url_for('profiles.print_view', profile_id=profile['id'], view=view) }}">Drucken</a>
   </div>
 </div>
 
@@ -65,18 +65,18 @@
   {% endif %}
 </section>
 
-<section class="card" id="impfausweis" aria-labelledby="record-h">
+<section class="card" id="record" aria-labelledby="record-h">
   <div class="record-head">
     <h2 id="record-h">Impfausweis</h2>
     {% if rows or matrix.columns %}
     <nav class="segmented" aria-label="Ansicht des Impfausweises">
       {% for key, label in views.items() %}
-      <a href="{{ url_for('profiles.show', profile_id=profile['id'], ansicht=key) }}#impfausweis"{% if key == view %} class="active" aria-current="page"{% endif %}>{{ label }}</a>
+      <a href="{{ url_for('profiles.show', profile_id=profile['id'], view=key) }}#record"{% if key == view %} class="active" aria-current="page"{% endif %}>{{ label }}</a>
       {% endfor %}
     </nav>
     {% endif %}
   </div>
-  {% if view == 'tabelle' and matrix.columns %}
+  {% if view == 'table' and matrix.columns %}
   {{ record_matrix(matrix, edit=true) }}
   {% elif rows %}
   <div class="table-wrap">
@@ -108,7 +108,7 @@
   <div><a class="btn" href="{{ url_for('profiles.new_vaccination', profile_id=profile['id']) }}">Impfung erfassen</a></div>
 </section>
 
-<section class="card" id="immunitaet" aria-labelledby="immunity-h">
+<section class="card" id="immunities" aria-labelledby="immunity-h">
   <h2 id="immunity-h">Immunität ohne Impfung</h2>
   <p class="hint" style="margin:0">Zum Beispiel durchgemachte Windpocken oder ein Antikörper-Nachweis. Die Impfung wird dann nicht mehr empfohlen.</p>
   {% if immunities %}

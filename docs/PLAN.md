@@ -39,7 +39,7 @@ Defaults chosen without asking:
 | M3 | Product catalogue, profiles, vaccination entries, immunities (CRUD, audit, family access) | done |
 | M4 | Profile page (status + record table), dashboard, print view, `/schedule`, disclaimer, `seed-demo`, icons, screenshots | done |
 | M5 | Docker smoke test and compose checked, README, CLAUDE.md, DEVELOPMENT.md, encrypted backups (`age`) | done |
-| M4b | Record as a booklet-style table (`?ansicht=tabelle`), on screen and in print (owner request) | done |
+| M4b | Record as a booklet-style table (`?view=table`), on screen and in print (owner request) | done |
 | — | Phase 1 merged into `main` (PR #1, CI green) | done |
 | — | **Owner review of phase 1** (rules in `OPEN_QUESTIONS.md`, catalogue, UI) | **open** |
 | M6 | Reminders by mail: settings on `/account`, scan in the notifier, unsubscribe link | done |

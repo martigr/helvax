@@ -32,7 +32,8 @@ flask --app helvax --debug run               # dev server on :5000
 
 ## Rules
 
-- UI text is **German** (Swiss style: "ss" instead of "ß", «» quotes). Code, comments, docs and commits are English.
+- UI text is **German** (Swiss style: "ss" instead of "ß", «» quotes). Code, comments, docs and commits are English,
+  and so are routes, query parameters and their values, and `#fragment` ids (`?view=table`, `#record`).
 - **Don't invent medical rules.** Every rule in `ch-2026.yaml` needs a `ref` to the PDF in `docs/sources/`.
   Anything interpreted gets `review: true` and an entry in `OPEN_QUESTIONS.md` (a test checks this).
   App conventions (e.g. when a dose counts as overdue) are documented there too.
