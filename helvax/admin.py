@@ -151,6 +151,27 @@ def create_family():
     return redirect(url_for('admin.index'))
 
 
+@bp.route('/families/<int:fid>/rename', methods=['POST'])
+@admin_required
+def rename_family(fid):
+    family = get_db().execute('SELECT * FROM families WHERE id = ?', (fid,)).fetchone() or abort(404)
+    name = request.form.get('name', '').strip()
+    if not 1 <= len(name) <= MAX_NAME_LENGTH:
+        flash(f'Der Name der Familie muss 1–{MAX_NAME_LENGTH} Zeichen lang sein.', 'warn')
+        return redirect(url_for('admin.index'))
+    if name == family['name']:
+        return redirect(url_for('admin.index'))
+    try:
+        with get_db() as con:
+            con.execute('UPDATE families SET name = ? WHERE id = ?', (name, fid))
+            audit.record(con, 'family_renamed', f'{family["name"]} → {name}')
+    except sqlite3.IntegrityError:
+        flash(f'Die Familie «{name}» gibt es schon.', 'warn')
+    else:
+        flash(f'Familie «{family["name"]}» heisst jetzt «{name}».', 'ok')
+    return redirect(url_for('admin.index'))
+
+
 @bp.route('/families/<int:fid>/delete', methods=['POST'])
 @admin_required
 def delete_family(fid):

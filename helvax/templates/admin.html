@@ -107,12 +107,22 @@
         {% for f in families %}
         <li>
           <span><strong>{{ f['name'] }}</strong> <span class="hint">{{ f['members'] }} {{ 'Konto' if f['members'] == 1 else 'Konten' }}, {{ f['profiles'] }} {{ 'Profil' if f['profiles'] == 1 else 'Profile' }}</span></span>
+          <span class="family-actions">
+          <details class="family-rename">
+            <summary class="linklike">Umbenennen</summary>
+            <form method="post" action="{{ url_for('admin.rename_family', fid=f['id']) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="text" name="name" value="{{ f['name'] }}" maxlength="{{ max_name }}" required aria-label="Neuer Name für {{ f['name'] }}">
+              <button type="submit" class="btn btn-small">Speichern</button>
+            </form>
+          </details>
           {% if not f['profiles'] %}
           <form method="post" action="{{ url_for('admin.delete_family', fid=f['id']) }}" data-confirm-title="Familie löschen?" data-confirm="Die Familie «{{ f['name'] }}» wird gelöscht. Die Konten bleiben erhalten." data-confirm-ok="Löschen" data-confirm-danger>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="linklike danger">Löschen</button>
           </form>
           {% endif %}
+          </span>
         </li>
         {% endfor %}
       </ul>

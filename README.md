@@ -25,8 +25,9 @@ All screenshots show the fictional demo family of `flask seed-demo`.
 
 ## Features
 
-- **Families and profiles.** An admin creates accounts and families. All accounts of a family see and edit
-  the same profiles (children and adults, no login of their own). Other families' data stays invisible.
+- **Families and profiles.** An admin creates accounts and families and can rename families. All accounts
+  of a family see and edit the same profiles (children and adults, no login of their own). Other families' data
+  stays invisible.
 - **Vaccination record** like the paper booklet: date, vaccine (trade name), what it protects against, dose,
   lot number, who vaccinated, note. Combination vaccines (e.g. DTPa-IPV-Hib-HBV) are the normal case: all
   logic works per antigen. A catalogue maps Swiss trade names to antigens and tags the products that some

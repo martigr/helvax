@@ -41,6 +41,7 @@ ACTIONS = {
     'user_admin_revoked': ('Admin-Rechte entzogen', 'admin'),
     'family_assigned': ('Familie zugeordnet', 'admin'),
     'family_created': ('Familie angelegt', 'admin'),
+    'family_renamed': ('Familie umbenannt', 'admin'),
     'family_deleted': ('Familie gelöscht', 'admin'),
     'settings': ('Einstellungen geändert', 'admin'),
 }
