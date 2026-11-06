@@ -386,8 +386,8 @@ there is no matrix build; multi-arch images are built only by the release workfl
 **Release** (`.github/workflows/release.yml`): bump `version` in `pyproject.toml` and `__version__` in
 `helvax/__init__.py`, merge, then `git tag vX.Y.Z && git push origin vX.Y.Z`. The workflow runs CI, builds
 `linux/amd64` + `linux/arm64`, pushes `ghcr.io/martigr/helvax:X.Y.Z`, `X.Y`, `X`, `latest` (pre-releases only
-their exact tag) and creates the GitHub release. The package is private while the repository is private (see
-README for pulling it with a `read:packages` token).
+their exact tag) and creates the GitHub release. After making the repository public, set the package `helvax` to public once
+(*Packages → helvax → Package settings → Change visibility*); GitHub does not do it automatically.
 
 ## Updating the schedule
 

@@ -57,7 +57,7 @@ flask --app helvax --debug run               # dev server on :5000
 - Dependency-light: no ORM, no JS framework, no build step, no CDNs or external fonts; pins in `requirements*.txt`.
 - Schema lives in `db.SCHEMA`/`init_db()`. After the first release, new columns go into `db.ADDED_COLUMNS`,
   with a test that builds the old schema.
-- The repository may become public: no secrets, real names, addresses, hostnames, IPs or real vaccination data.
+- The repository is public: no secrets, real names, addresses, hostnames, IPs or real vaccination data.
   Demo and test data are fictional; screenshots only from `seed-demo`.
 - Add or adjust tests for every behaviour change, including 400/403/404 paths. When changing routes, config,
   the schema or the rule format, update `docs/DEVELOPMENT.md` and the `README.md`.

@@ -11,6 +11,11 @@ and prints a clean vaccination record. The user interface is in German (Swiss st
 It stores health data, so it is built to be private by default: login everywhere, no telemetry, no external
 requests, no health details in logs or mails, an audit log of every change.
 
+> **Status.** A hobby project, maintained in spare time and run by its author for their own family. It is
+> published as is, under the MIT license and without warranty. It stores health data: if you run your own
+> instance you are responsible for it (HTTPS, backups, updates; see *Security checklist*). There is no hosted
+> version and no public demo; try it locally with the fictional demo family (*Quick start*).
+
 ## Screenshots
 
 All screenshots show the fictional demo family of `flask seed-demo`.
@@ -103,22 +108,16 @@ accounts, and assign the accounts to the family. Change the admin password under
 `ADMIN_PASSWORD` from `.env`. Admin rights of other accounts can be granted or revoked there as well
 (not your own, so one admin always remains).
 
-### Prebuilt image (private while the repository is private)
+### Prebuilt image (optional)
 
 Every release tag `vX.Y.Z` publishes the image for `linux/amd64` and `linux/arm64` to
-`ghcr.io/martigr/helvax` (tags `X.Y.Z`, `X.Y`, `X`, `latest`). While the repository is private, so is the
-image. To pull it on the server:
+`ghcr.io/martigr/helvax` (tags `X.Y.Z`, `X.Y`, `X`, `latest`). To use it instead of building, replace
+`build: .` and `image: helvax` in both services of `docker-compose.yml` with `image: ghcr.io/martigr/helvax:0`
+(or a full version), then `docker compose pull && docker compose up -d`. Pin a version rather than `latest` and
+check the release notes before updating.
 
-1. On GitHub: *Settings → Developer settings → Personal access tokens → Fine-grained tokens* (or a classic
-   token if your account can't scope packages there): a token with **only `read:packages`**, with an
-   expiry date.
-2. On the server, once: `echo "$TOKEN" | docker login ghcr.io -u <github-user> --password-stdin`
-   (the credentials end up in `~/.docker/config.json` of that user; keep it private).
-3. In `docker-compose.yml`, replace `build: .` and `image: helvax` in both services with
-   `image: ghcr.io/martigr/helvax:0` (or a full version), then `docker compose pull && docker compose up -d`.
-
-Once the repository is public, make the package public too (*Packages → helvax → Package settings → Change
-visibility*); then no login is needed.
+If the package is not visible to you yet, the maintainer still has to set it to public
+(*Packages → helvax → Package settings → Change visibility*); until then, build from source.
 
 ### Volumes and permissions
 
@@ -319,11 +318,19 @@ vaccinations, premature infants, the detailed schemas for incompletely vaccinate
 "Nachholschema mit Ärztin/Arzt festlegen"). Every interpretation is listed in
 [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md); corrections are very welcome.
 
+## Contributing
+
+Issues and pull requests are welcome, especially corrections to the vaccination rules (please cite the page of
+the schedule). Never post real vaccination data, names or other personal data in an issue, a screenshot or a
+test: use the fictional demo data. Run `ruff check . && pytest` before opening a pull request; the conventions
+are in [CLAUDE.md](CLAUDE.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Report security problems
+privately, see [SECURITY.md](SECURITY.md).
+
 ## Development
 
 Architecture, data model, rule format, engine, routes and security notes:
 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Reporting vulnerabilities: [SECURITY.md](SECURITY.md).
-Guidance for Claude Code: [CLAUDE.md](CLAUDE.md).
+Conventions (also used by Claude Code): [CLAUDE.md](CLAUDE.md).
 
 ## License
 

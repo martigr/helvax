@@ -94,6 +94,8 @@ backups via CLI (document encrypting them on the NAS). No telemetry, no external
 
 ## Repository: private now, public later
 
+> Historical: the repository has been public since 2026-11; the README describes the current state.
+
 The GitHub repo `martigr/helvax` starts **private** and may become public later. Build it so that
 flipping it to public needs no cleanup:
 
