@@ -102,18 +102,56 @@ def test_family_with_profiles_cannot_be_deleted(client, query, login, app):
     assert query('SELECT COUNT(*) FROM profiles') == [(1,)]
 
 
+def test_rename_family(client, query, login):
+    t = login('alice')
+    resp = client.post('/admin/families/2/rename', data={'name': ' Familie Neu ', 'csrf_token': t},
+                       follow_redirects=True)
+    assert 'Familie «Beispiel» heisst jetzt «Familie Neu».' in resp.get_data(as_text=True)
+    assert query('SELECT name FROM families ORDER BY id') == [('Muster',), ('Familie Neu',)]
+    assert query("SELECT detail FROM audit_log WHERE action = 'family_renamed'") == [('Beispiel → Familie Neu',)]
+    assert query("SELECT family_id FROM users WHERE username = 'carol'") == [(2,)]  # members stay
+
+    page = client.get('/admin').get_data(as_text=True)
+    assert 'action="/admin/families/2/rename"' in page
+    assert 'value="Familie Neu"' in page
+
+    # Only the case changes: allowed although names are unique ignoring case
+    client.post('/admin/families/2/rename', data={'name': 'familie neu', 'csrf_token': t})
+    assert query('SELECT name FROM families WHERE id = 2') == [('familie neu',)]
+
+    # Unchanged name: nothing to log
+    client.post('/admin/families/2/rename', data={'name': 'familie neu', 'csrf_token': t})
+    assert query("SELECT COUNT(*) FROM audit_log WHERE action = 'family_renamed'") == [(2,)]
+
+
+def test_rename_family_invalid(client, query, login):
+    t = login('alice')
+    resp = client.post('/admin/families/2/rename', data={'name': 'muster', 'csrf_token': t}, follow_redirects=True)
+    assert 'Die Familie «muster» gibt es schon.' in resp.get_data(as_text=True)
+    resp = client.post('/admin/families/2/rename', data={'name': '  ', 'csrf_token': t}, follow_redirects=True)
+    assert 'muss 1–40 Zeichen lang sein' in resp.get_data(as_text=True)
+    client.post('/admin/families/2/rename', data={'name': 'x' * 41, 'csrf_token': t})
+    client.post('/admin/families/2/rename', data={'csrf_token': t})
+    assert query('SELECT name FROM families ORDER BY id') == [('Muster',), ('Beispiel',)]
+    assert query("SELECT COUNT(*) FROM audit_log WHERE action = 'family_renamed'") == [(0,)]
+
+
 def test_family_errors(client, query, login):
     t = login('alice')
     assert client.post('/admin/users/2/family', data={'family_id': '999', 'csrf_token': t}).status_code == 400
     assert client.post('/admin/users/2/family', data={'family_id': 'x', 'csrf_token': t}).status_code == 400
     assert client.post('/admin/users/99/family', data={'family_id': '1', 'csrf_token': t}).status_code == 404
     assert client.post('/admin/families/999/delete', data={'csrf_token': t}).status_code == 404
+    assert client.post('/admin/families/999/rename', data={'name': 'X', 'csrf_token': t}).status_code == 404
+    assert client.post('/admin/families/1/rename', data={'name': 'X'}).status_code == 400  # CSRF
     assert client.post('/admin/users/2/family', data={'family_id': '2'}).status_code == 400  # CSRF
 
     t = login('bob')
     assert client.post('/admin/families', data={'name': 'Meins', 'csrf_token': t}).status_code == 403
     assert client.post('/admin/users/2/family', data={'family_id': '2', 'csrf_token': t}).status_code == 403
     assert client.post('/admin/families/1/delete', data={'csrf_token': t}).status_code == 403
+    assert client.post('/admin/families/1/rename', data={'name': 'Meins', 'csrf_token': t}).status_code == 403
+    assert query('SELECT name FROM families ORDER BY id') == [('Muster',), ('Beispiel',)]
     assert query('SELECT family_id FROM users ORDER BY id') == [(1,), (1,), (2,)]
 
 

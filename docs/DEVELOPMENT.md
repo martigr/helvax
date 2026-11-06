@@ -332,7 +332,7 @@ URLs are English, even though the UI is German: paths, query parameters and thei
 | `/admin` | GET | admin | Accounts, families, settings |
 | `/admin/users` | POST | admin | Create account |
 | `/admin/users/<id>/reset`, `/delete`, `/family`, `/admin` | POST | admin | New password (shown once), delete (not yourself), assign family (`family_id`, empty = none), grant or revoke admin rights (`is_admin` = `1`/`0`, not yourself) |
-| `/admin/families`, `/admin/families/<id>/delete` | POST | admin | Create (1–40 characters, unique); delete only without profiles |
+| `/admin/families`, `/admin/families/<id>/rename`, `/delete` | POST | admin | Create or rename (`name`, 1–40 characters, unique); delete only without profiles |
 | `/admin/settings` | POST | admin | `audit_days` (1–3650) |
 | `/admin/audit` | GET | admin | `?kind=login\|record\|settings\|admin`, `?page=N` |
 | `/login`, `/logout`, `/forgot-password`, `/reset-password/<token>` | | public | As in laundry-booking |
