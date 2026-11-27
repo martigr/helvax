@@ -271,7 +271,9 @@ rules:
 `engine.evaluate(profile, doses, schedule, today, horizon=90 days)` → one `AntigenStatus` per rule:
 
 - `status`: `overdue` > `due` > `upcoming` > `complete` > `not_recommended` (`STATUS_LABELS` gives the German
-  words). `upcoming` = a series in progress, or something recommended within `horizon`. A rule that only
+  words). `upcoming` = a series in progress, or something recommended within `horizon`. The next dose of a
+  series in progress is upcoming at once, except an age-window booster (`window`, e.g. 11–15 years): until it
+  comes within `horizon` the series is `complete` with `next` set. A rule that only
   starts later (HPV at 11) is `not_recommended` with `next` set and the reason "Empfohlen ab ...".
 - `next` (`PlannedDose`): `number`, `earliest`, `recommended`, `latest` (overdue after), `asap`, `label`.
 - `plan`: the missing doses from today on, each respecting the minimum intervals after the previous one

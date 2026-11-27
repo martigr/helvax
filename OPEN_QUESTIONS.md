@@ -15,7 +15,9 @@ Page numbers refer to the PDF. Nothing here is medical advice.
    (`overdue_grace: 1m`), and boosters one year after their date (`booster_grace: 1y` for `dip`, `tet`, `tbe`).
    Catch-up doses of unvaccinated children and adults (`catch_up: true`) count as overdue at once.
 2. **"Upcoming" horizon:** a booster or a not yet started vaccination shows as upcoming 90 days ahead
-   (`engine.DEFAULT_HORIZON`).
+   (`engine.DEFAULT_HORIZON`). This includes the age-window boosters of the childhood series (4–7 and
+   11–15 years): before that, the series counts as complete, with the next booster date shown. The other
+   doses of a series in progress (e.g. the infant doses) show as upcoming right after the previous dose.
 3. **Doses given too early** (below the minimum age or interval) still count, with a warning. The only
    exception is the explicit rule for MMR doses before 9 months (S. 13 k), which don't count.
 4. **Catch-up intervals:** Tab. 2 gives the third dose as "8 months after the first". The YAML writes it as

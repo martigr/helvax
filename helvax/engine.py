@@ -6,7 +6,9 @@ Everything works per antigen: a combination vaccine is one `Dose` per antigen it
 
 Statuses (most urgent first): overdue, due, upcoming, complete, not_recommended. `upcoming` means a
 series is in progress (its next dose is in the future), or a dose is recommended within `horizon`.
-A rule that only starts later (e.g. HPV at 11) is `not_recommended` with `next` set.
+An age-window booster of a series in progress (e.g. at 11–15) is only upcoming within `horizon`; before,
+the series is `complete` with `next` set. A rule that only starts later (e.g. HPV at 11) is
+`not_recommended` with `next` set.
 
 "Overdue" is an app convention: the schedule gives recommended ages and windows; a dose counts as
 overdue after its window, or `overdue_grace` (schedule) / `booster_grace` (rule, for boosters) after its
@@ -256,7 +258,12 @@ def _evaluate_series_course(rule, course, profile, counted, schedule, today, hor
                 return _Part('not_recommended', reason=reason, category=category)
             if spec.if_missed == 'doctor' and latest is not None and today > latest:
                 return _Part('overdue', next=planned, reason=DOCTOR, needs_doctor=True, category=category)
-            status = _status_for(planned, today, horizon, in_progress=filled > 0, catch_up=series.catch_up)
+            # A series in progress keeps its next dose upcoming (e.g. the infant doses), except an age-window
+            # booster (e.g. at 11–15 years): it is up to date until the booster comes within the horizon
+            status = _status_for(planned, today, horizon, in_progress=filled > 0 and not spec.window,
+                                 catch_up=series.catch_up)
+            if status == _LATER and filled > 0:
+                status = 'complete'
             part = _Part(status, next=planned, category=category,
                          reason=f'Empfohlen ab {planned.recommended:%d.%m.%Y}' if status == _LATER else None)
         elif deadline is not None and planned.recommended >= deadline:

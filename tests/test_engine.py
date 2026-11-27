@@ -188,6 +188,20 @@ def test_combination_product_updates_every_antigen():
     assert after['pol'].next.recommended == D(2030, 1, 1)
 
 
+def test_window_dose_of_a_series_in_progress_uses_the_horizon():
+    """The next infant dose is upcoming at once; an age-window booster only within the horizon."""
+    doses = doses_of('pol', D(2026, 3, 1))
+    r = status('pol', D(2026, 1, 1), doses, D(2026, 10, 15))
+    assert (r.status, r.next.recommended, r.reason) == ('complete', D(2030, 1, 1), None)
+    assert [d.recommended for d in r.plan] == [D(2030, 1, 1)]
+    assert status('pol', D(2026, 1, 1), doses, D(2029, 10, 2)).status == 'complete'
+    assert status('pol', D(2026, 1, 1), doses, D(2029, 10, 3)).status == 'upcoming'
+    # A dose at a fixed age keeps the series upcoming even when it is further away than the horizon
+    r = status('ipv', D(2026, 1, 1), doses_of('ipv', D(2026, 3, 1), D(2026, 5, 1)), D(2026, 6, 1),
+               flags=['optin:ipv'])
+    assert (r.status, r.next.recommended) == ('upcoming', D(2027, 1, 1))
+
+
 def test_dose_warnings():
     r = status('hib', D(2026, 1, 1), doses_of('hib', D(2026, 2, 1), D(2026, 2, 15)), D(2026, 3, 1))
     assert r.warnings == ('Dosis 1 vom 01.02.2026 wurde jünger als 6 Wochen gegeben.',

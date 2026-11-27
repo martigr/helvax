@@ -63,10 +63,28 @@ def test_infant_on_time():
     r = evaluate(birth, three, today=D(2027, 2, 1))
     assert {a: r[a].status for a in ('hib', 'hbv', 'pcv')} == {'hib': 'complete', 'hbv': 'complete',
                                                                'pcv': 'complete'}
-    # Diphtheria, tetanus, pertussis and polio: booster at 4–7 years
+    # Diphtheria, tetanus, pertussis and polio: up to date, booster at 4–7 years
     for a in DTPA_IPV:
         assert (r[a].status, r[a].next.recommended, r[a].next.latest) == \
-            ('upcoming', D(2030, 1, 10), D(2034, 1, 9)), a
+            ('complete', D(2030, 1, 10), D(2034, 1, 9)), a
+
+
+def test_booster_at_11_to_15_is_upcoming_only_within_the_horizon():
+    """A six-year-old with the 4–7 booster is up to date; the 11–15 booster only shows 90 days ahead."""
+    birth = D(2020, 5, 1)
+    doses = entries((D(2020, 7, 1), DTPA_IPV), (D(2020, 9, 1), DTPA_IPV), (D(2021, 5, 1), DTPA_IPV),
+                    (D(2025, 5, 1), DTPA_IPV))
+    dtpa = ('dip', 'tet', 'pert')  # polio has no booster at 11–15
+    r = evaluate(birth, doses, today=D(2026, 11, 27))
+    for a in dtpa:
+        assert (r[a].status, r[a].next.recommended) == ('complete', D(2031, 5, 1)), a
+    assert not any(s.antigen in DTPA_IPV for s in engine.summary(list(r.values())))
+    r = evaluate(birth, doses, today=D(2031, 1, 30))
+    assert {r[a].status for a in dtpa} == {'complete'}
+    r = evaluate(birth, doses, today=D(2031, 1, 31))
+    assert {r[a].status for a in dtpa} == {'upcoming'}
+    r = evaluate(birth, doses, today=D(2031, 5, 1))
+    assert {r[a].status for a in dtpa} == {'due'}
 
 
 def test_combination_vaccine_updates_every_antigen():
